@@ -29,6 +29,9 @@ executable DDChat-exe
                      , gtk
                      , webkit
                      , glib
+                     , pureMD5
+                     , network
+                     , process
   default-language:    Haskell2010
 
 test-suite DDChat-test

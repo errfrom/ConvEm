@@ -6,12 +6,16 @@ module GUI.Main
 -- Описывает структуру взаимодействия пользователя с программой.
 --------------------------------------------------------------------------------
 
-import qualified Control.Concurrent              as Conc      (forkIO)
+import qualified Control.Concurrent              as Conc      (forkIO
+                                                              ,killThread)
 import           Control.Monad                                (void)
 import qualified Control.Exception               as Exc       (SomeException(..))
 import           Control.Exception                            (catch)
 import qualified System.Exit                     as Exit      (ExitCode(..)
                                                               ,exitWith)
+import qualified System.Process                  as Process   (system
+                                                              ,readProcessWithExitCode)
+import qualified System.Info                     as SysInfo   (os)
 import qualified Graphics.UI.Threepenny.Core     as UICore
 import           Graphics.UI.Threepenny.Core                  ((#), (#+))
 import qualified Graphics.UI.Gtk.General.General as Gtk       (initGUI, mainQuit
@@ -36,7 +40,7 @@ import           System.Glib.Attributes                       (AttrOp((:=)))
 -- параллельно инициализации графического интерфейса GTK.
 initInterface :: IO()
 initInterface = do
-  startLocalServer <- Conc.forkIO startLocalServer
+  _ <- Conc.forkIO startLocalServer
   startGtk
 
 -- | Запускает локальный сервер,
@@ -46,7 +50,7 @@ startLocalServer :: IO()
 startLocalServer =
   let config = UICore.defaultConfig {UICore.jsPort = Just 8010}
   in UICore.startGUI config setup
-  where setup window = void $
+  where setup window = void $ do
           return window # UICore.set UICore.title "DDChat"
 
 -- | Инициализирует GTK GUI,
@@ -66,9 +70,35 @@ startGtk =
     Attrs.set window [ Container.containerChild   := scrolledWindow
                      , Window.windowTitle         := "DDChat"
                      , Window.windowDefaultWidth  := 500
-                     , Window.windowDefaultHeight := 400]
+                     , Window.windowDefaultHeight := 400 ]
     Attrs.set scrolledWindow [ Container.containerChild := webView ]
     WebView.webViewLoadUri webView url
-    Widget.onDestroy window Gtk.mainQuit
+    Widget.onDestroy window safeQuit
     Widget.widgetShowAll window
     Gtk.mainGUI
+
+-- | Убивает процессы, использующие
+-- порт сервера.
+-- NOTE: взаимодействует с Shell на Linux.
+-- TODO: поддержка Windows и MacOS.
+safeQuit :: IO()
+safeQuit = do
+  -- Определение ID процесса системным способом
+  -- по переданному номеру порта.
+  if (SysInfo.os == "linux")
+    then getPidByPortId 8010
+    else return ()
+  Gtk.mainQuit
+  where linuxReadProcess portId =
+          let portArg = ":" ++ (show portId)
+          in Process.readProcessWithExitCode "lsof" ["-t", "-i", portArg] ""
+
+        linuxKillProcess readProcessOutput =
+          let command = "kill -9 " ++ readProcessOutput
+          in Process.system command
+
+        getPidByPortId portId = do
+          (exitCode, stdout', _) <- linuxReadProcess portId
+          case exitCode of
+            Exit.ExitFailure _ -> return ()
+            Exit.ExitSuccess   -> (void . linuxKillProcess) stdout'

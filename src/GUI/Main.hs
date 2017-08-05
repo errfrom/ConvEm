@@ -35,31 +35,39 @@ import qualified Graphics.UI.Gtk.Abstract.Container
 import qualified System.Glib.Attributes          as Attrs     (set)
 import           System.Glib.Attributes                       (AttrOp((:=)))
 
+import qualified GUI.Login                       as Login     (loginForm)
+
+import qualified Graphics.UI.Threepenny.Elements as Elems
+
 -- | Основная функция, запускающая
 -- инициализацию и поддержку локального сервера
 -- параллельно инициализации графического интерфейса GTK.
 initInterface :: IO()
-initInterface = do
-  _ <- Conc.forkIO startLocalServer
-  startGtk
+initInterface =
+  let portId = 8010
+  in do
+  _ <- Conc.forkIO (startLocalServer portId)
+  startGtk portId
 
 -- | Запускает локальный сервер,
 -- декорированный функцией setup
 -- при помощи Threepenny-UI.
-startLocalServer :: IO()
-startLocalServer =
-  let config = UICore.defaultConfig {UICore.jsPort = Just 8010}
+startLocalServer :: Int -> IO()
+startLocalServer portId =
+  let config = UICore.defaultConfig {UICore.jsPort = Just portId}
   in UICore.startGUI config setup
   where setup window = void $ do
           return window # UICore.set UICore.title "DDChat"
+          loginForm <- Login.loginForm
+          UICore.getBody window #+ [UICore.element loginForm]
 
 -- | Инициализирует GTK GUI,
 -- выступающий в роли браузера для описанного
 -- функцией 'setup' интерфейса взаимодействия.
-startGtk :: IO()
-startGtk =
+startGtk :: Int -> IO()
+startGtk portId =
   let gtkInitErrorMsg = "Ошибка инициализации графического интерфейса."
-      url             = "http://127.0.0.1:8010"
+      url             = "http://127.0.0.1:" ++ (show portId)
   in do
     Gtk.initGUI `catch` (\(Exc.SomeException _) -> do
       putStrLn gtkInitErrorMsg
@@ -73,7 +81,7 @@ startGtk =
                      , Window.windowDefaultHeight := 400 ]
     Attrs.set scrolledWindow [ Container.containerChild := webView ]
     WebView.webViewLoadUri webView url
-    Widget.onDestroy window safeQuit
+    Widget.onDestroy window (safeQuit portId)
     Widget.widgetShowAll window
     Gtk.mainGUI
 
@@ -81,12 +89,12 @@ startGtk =
 -- порт сервера.
 -- NOTE: взаимодействует с Shell на Linux.
 -- TODO: поддержка Windows и MacOS.
-safeQuit :: IO()
-safeQuit = do
+safeQuit :: Int -> IO()
+safeQuit portId = do
   -- Определение ID процесса системным способом
   -- по переданному номеру порта.
   if (SysInfo.os == "linux")
-    then getPidByPortId 8010
+    then getPidByPortId portId
     else return ()
   Gtk.mainQuit
   where linuxReadProcess portId =

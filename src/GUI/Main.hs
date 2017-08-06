@@ -6,38 +6,45 @@ module GUI.Main
 -- Описывает структуру взаимодействия пользователя с программой.
 --------------------------------------------------------------------------------
 
-import qualified Control.Concurrent              as Conc      (forkIO
-                                                              ,killThread)
-import           Control.Monad                                (void)
-import qualified Control.Exception               as Exc       (SomeException(..))
-import           Control.Exception                            (catch)
-import qualified System.Exit                     as Exit      (ExitCode(..)
-                                                              ,exitWith)
-import qualified System.Process                  as Process   (system
-                                                              ,readProcessWithExitCode)
-import qualified System.Info                     as SysInfo   (os)
-import qualified Graphics.UI.Threepenny.Core     as UICore
-import           Graphics.UI.Threepenny.Core                  ((#), (#+))
-import qualified Graphics.UI.Gtk.General.General as Gtk       (initGUI, mainQuit
-                                                              ,mainGUI)
-import qualified Graphics.UI.Gtk.Windows.Window  as Window    (windowNew
-                                                              ,windowTitle
-                                                              ,windowDefaultWidth
-                                                              ,windowDefaultHeight)
-import qualified Graphics.UI.Gtk.WebKit.WebView  as WebView   (webViewNew
-                                                              ,webViewLoadUri)
-import qualified Graphics.UI.Gtk.Scrolling.ScrolledWindow
-                                                 as SWindow   (scrolledWindowNew)
-import qualified Graphics.UI.Gtk.Abstract.Widget as Widget    (onDestroy
-                                                              ,widgetShowAll)
-import qualified Graphics.UI.Gtk.Abstract.Container
-                                                 as Container (containerChild)
-import qualified System.Glib.Attributes          as Attrs     (set)
-import           System.Glib.Attributes                       (AttrOp((:=)))
-
-import qualified GUI.Login                       as Login     (loginForm)
-
-import qualified Graphics.UI.Threepenny.Elements as Elems
+--Control-----------------------------------------------------------------------
+import qualified Control.Concurrent as Conc (forkIO, killThread)
+import           Control.Monad              (void)
+import qualified Control.Exception  as Exc  (SomeException(..))
+import           Control.Exception          (catch)
+--System------------------------------------------------------------------------
+import qualified System.Exit            as Exit    (ExitCode(..), exitWith)
+import qualified System.Process         as Process (system
+                                                   ,readProcessWithExitCode)
+import qualified System.Info            as SysInfo (os)
+import qualified System.Glib.Attributes as Attrs   (set)
+import           System.Glib.Attributes            (AttrOp((:=)))
+--Threpenny---------------------------------------------------------------------
+import qualified Graphics.UI.Threepenny.Core as UI
+import           Graphics.UI.Threepenny.Core       ((#), (#+))
+--GTK---------------------------------------------------------------------------
+import qualified Graphics.UI.Gtk.General.General          as Gtk
+  (initGUI, mainQuit, mainGUI)
+import qualified Graphics.UI.Gtk.Windows.Window           as Win
+  (Window(..), windowNew, windowTitle, windowDefaultWidth
+  ,windowDefaultHeight, windowSetGeometryHints)
+import qualified Graphics.UI.Gtk.Scrolling.ScrolledWindow as SWin
+  (scrolledWindowNew)
+import qualified Graphics.UI.Gtk.Abstract.Widget          as Widget
+  (onDestroy, widgetShowAll, widgetSetSizeRequest)
+import qualified Graphics.UI.Gtk.Abstract.Container       as Container
+  (containerChild)
+--WebKit------------------------------------------------------------------------
+import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
+  (WebView(..), webViewNew, webViewLoadUri
+  ,webViewSetWebSettings, webViewGetWebSettings
+  ,webViewWebSettings)
+import qualified Graphics.UI.Gtk.WebKit.DOM.SecurityPolicy as SecPolicy
+  (allowsImageFrom)
+import qualified Graphics.UI.Gtk.WebKit.WebSettings        as Settings
+  (webSettingsEnableUniversalAccessFromFileUris)
+--My----------------------------------------------------------------------------
+import qualified GUI.Login as Login (loginForm)
+--------------------------------------------------------------------------------
 
 -- | Основная функция, запускающая
 -- инициализацию и поддержку локального сервера
@@ -46,44 +53,60 @@ initInterface :: IO()
 initInterface =
   let portId = 8010
   in do
-  _ <- Conc.forkIO (startLocalServer portId)
-  startGtk portId
+    _ <- Conc.forkIO (startLocalServer portId)
+    webView <- startGtk portId
+    return ()
 
 -- | Запускает локальный сервер,
 -- декорированный функцией setup
 -- при помощи Threepenny-UI.
 startLocalServer :: Int -> IO()
 startLocalServer portId =
-  let config = UICore.defaultConfig {UICore.jsPort = Just portId}
-  in UICore.startGUI config setup
+  let config = UI.defaultConfig {UI.jsPort = Just portId}
+  in UI.startGUI config setup
   where setup window = void $ do
-          return window # UICore.set UICore.title "DDChat"
+          return window # UI.set UI.title "DDChat"
           loginForm <- Login.loginForm
-          UICore.getBody window #+ [UICore.element loginForm]
+          UI.getBody window #+ [UI.element loginForm]
 
 -- | Инициализирует GTK GUI,
 -- выступающий в роли браузера для описанного
 -- функцией 'setup' интерфейса взаимодействия.
-startGtk :: Int -> IO()
+startGtk :: Int -> IO WV.WebView
 startGtk portId =
-  let gtkInitErrorMsg = "Ошибка инициализации графического интерфейса."
-      url             = "http://127.0.0.1:" ++ (show portId)
+  let url             = "http://127.0.0.1:" ++ (show portId)
   in do
-    Gtk.initGUI `catch` (\(Exc.SomeException _) -> do
-      putStrLn gtkInitErrorMsg
-      Exit.exitWith (Exit.ExitFailure 1))
-    window         <- Window.windowNew
-    scrolledWindow <- SWindow.scrolledWindowNew Nothing Nothing
-    webView        <- WebView.webViewNew
-    Attrs.set window [ Container.containerChild   := scrolledWindow
-                     , Window.windowTitle         := "DDChat"
-                     , Window.windowDefaultWidth  := 500
-                     , Window.windowDefaultHeight := 400 ]
+    improvedInitGUI
+    window         <- Win.windowNew
+    scrolledWindow <- SWin.scrolledWindowNew Nothing Nothing
+    webView        <- WV.webViewNew
+    setAdditionalWVSettings webView
+    Attrs.set window [ Container.containerChild := scrolledWindow
+                     , Win.windowTitle          := "DDChat"
+                     , Win.windowDefaultWidth   := 765
+                     , Win.windowDefaultHeight  := 710 ]
+    -- Устанавливаем минимальные значения размеров окна
+    Widget.widgetSetSizeRequest window (565 :: Int) (565 :: Int)
     Attrs.set scrolledWindow [ Container.containerChild := webView ]
-    WebView.webViewLoadUri webView url
+    WV.webViewLoadUri webView url
     Widget.onDestroy window (safeQuit portId)
     Widget.widgetShowAll window
     Gtk.mainGUI
+    return webView
+  where improvedInitGUI =
+          let gtkInitErrorMsg = "Ошибка инициализации графического интерфейса."
+          in do
+            Gtk.initGUI `catch`
+              \(Exc.SomeException _) -> do
+                putStrLn gtkInitErrorMsg
+                Exit.exitWith (Exit.ExitFailure 1)
+
+        setAdditionalWVSettings :: WV.WebView -> IO ()
+        setAdditionalWVSettings webView = do
+          wvSettings <- WV.webViewGetWebSettings webView
+          Attrs.set wvSettings
+            [Settings.webSettingsEnableUniversalAccessFromFileUris := True]
+          WV.webViewSetWebSettings webView wvSettings
 
 -- | Убивает процессы, использующие
 -- порт сервера.

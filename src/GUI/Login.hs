@@ -10,10 +10,10 @@ module GUI.Login where
 import           Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny.Elements       as Elems
 import qualified Graphics.UI.Threepenny.Events         as Events
-import qualified Data.Int                              as Int     (Int64)
+import qualified Data.Int                              as Int    (Int64)
 import qualified GUI.Elements.Button                   as Btn
-import qualified GUI.Elements.Input                    as Inp     (InputType(..)
-                                                                  ,simpleInput)
+import qualified GUI.Elements.Input                    as Inp    (InputType(..)
+                                                                 ,simpleInput)
 --------------------------------------------------------------------------------
 
 loginForm :: UI Element
@@ -25,6 +25,7 @@ loginForm = do
   inpEmail    <- Inp.simpleInput "Email"  Inp.Simple
   inpPassword <- Inp.simpleInput "Пароль" Inp.Password
   btnLogin    <- Btn.importantBtn "Войти"
+  on Events.click btnLogin $ \_ -> return() -- login function here
   form <- Elems.div # set children [ inpEmail
                                    , inpPassword
                                    , btnLogin

@@ -1,0 +1,75 @@
+body
+{
+  background-color: "white";
+}
+
+*
+{
+  outline: none;
+}
+
+input
+{
+  width         : 300px;
+  height        : 40px;
+  line-height   : 24px;
+  border-width  : 0px;
+  font-family   : PT Sans;
+  color         : #808080; /* light gray */
+  border-radius : 4px;
+}
+
+button.btn-link
+{
+  background-color : white;
+  border-width     : 0px;
+  text-decoration  : underline;
+  font-family      : PT Sans;
+  color            : #808080; /* light gray */
+}
+
+button.btn-link:hover
+{
+  text-decoration : none;
+}
+
+button.btn-important
+{
+  background-color : #5F9EA0; /* green */
+  color            : white;
+  width            : 300px;
+  height           : 44px;
+  border-radius    : 0px;
+  border-width     : 0px;
+  font-family      : PT Sans;
+  font-size        : 16px;
+}
+
+button.btn-important:hover
+{
+  background-color : #66A9AB; /* light green */
+}
+
+button.btn-important:active
+{
+  background-color : #5A9597; /* dark green */
+}
+
+.additional-btns
+{
+  text-align : center;
+  margin     : auto;
+}
+
+.main-div
+{
+  -webkit-user-select : none;
+  width               : 300px;
+  height              : 400px;
+  margin              : auto;
+  position            : absolute;
+  top                 : 20%;
+  left                : 0;
+  right               : 0;
+  bottom              : 0;
+}

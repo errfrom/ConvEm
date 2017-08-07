@@ -18,15 +18,17 @@ import qualified System.Process         as Process (system
 import qualified System.Info            as SysInfo (os)
 import qualified System.Glib.Attributes as Attrs   (set)
 import           System.Glib.Attributes            (AttrOp((:=)))
+import qualified System.Directory       as Dir     (getCurrentDirectory)
 --Threpenny---------------------------------------------------------------------
-import qualified Graphics.UI.Threepenny.Core as UI
-import           Graphics.UI.Threepenny.Core       ((#), (#+))
+import qualified Graphics.UI.Threepenny.Core     as UI
+import qualified Graphics.UI.Threepenny.Elements as Elems (addStyleSheet)
+import           Graphics.UI.Threepenny.Core              ((#), (#+))
 --GTK---------------------------------------------------------------------------
 import qualified Graphics.UI.Gtk.General.General          as Gtk
   (initGUI, mainQuit, mainGUI)
 import qualified Graphics.UI.Gtk.Windows.Window           as Win
   (Window(..), windowNew, windowTitle, windowDefaultWidth
-  ,windowDefaultHeight, windowSetGeometryHints)
+  ,windowDefaultHeight)
 import qualified Graphics.UI.Gtk.Scrolling.ScrolledWindow as SWin
   (scrolledWindowNew)
 import qualified Graphics.UI.Gtk.Abstract.Widget          as Widget
@@ -35,13 +37,7 @@ import qualified Graphics.UI.Gtk.Abstract.Container       as Container
   (containerChild)
 --WebKit------------------------------------------------------------------------
 import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
-  (WebView(..), webViewNew, webViewLoadUri
-  ,webViewSetWebSettings, webViewGetWebSettings
-  ,webViewWebSettings)
-import qualified Graphics.UI.Gtk.WebKit.DOM.SecurityPolicy as SecPolicy
-  (allowsImageFrom)
-import qualified Graphics.UI.Gtk.WebKit.WebSettings        as Settings
-  (webSettingsEnableUniversalAccessFromFileUris)
+  (WebView(..), webViewNew, webViewLoadUri)
 --My----------------------------------------------------------------------------
 import qualified GUI.Login as Login (loginForm)
 --------------------------------------------------------------------------------
@@ -61,11 +57,16 @@ initInterface =
 -- декорированный функцией setup
 -- при помощи Threepenny-UI.
 startLocalServer :: Int -> IO()
-startLocalServer portId =
-  let config = UI.defaultConfig {UI.jsPort = Just portId}
-  in UI.startGUI config setup
+startLocalServer portId = do
+  currentDir <- Dir.getCurrentDirectory
+  let pathStatic = currentDir ++ ("/src/GUI/static/")
+      config = UI.defaultConfig { UI.jsPort   = Just portId
+                                , UI.jsStatic = Just pathStatic }
+  UI.startGUI config setup
   where setup window = void $ do
           return window # UI.set UI.title "DDChat"
+          Elems.addStyleSheet window "fonts.css"
+          Elems.addStyleSheet window "login.css"
           loginForm <- Login.loginForm
           UI.getBody window #+ [UI.element loginForm]
 
@@ -80,7 +81,6 @@ startGtk portId =
     window         <- Win.windowNew
     scrolledWindow <- SWin.scrolledWindowNew Nothing Nothing
     webView        <- WV.webViewNew
-    setAdditionalWVSettings webView
     Attrs.set window [ Container.containerChild := scrolledWindow
                      , Win.windowTitle          := "DDChat"
                      , Win.windowDefaultWidth   := 765
@@ -100,13 +100,6 @@ startGtk portId =
               \(Exc.SomeException _) -> do
                 putStrLn gtkInitErrorMsg
                 Exit.exitWith (Exit.ExitFailure 1)
-
-        setAdditionalWVSettings :: WV.WebView -> IO ()
-        setAdditionalWVSettings webView = do
-          wvSettings <- WV.webViewGetWebSettings webView
-          Attrs.set wvSettings
-            [Settings.webSettingsEnableUniversalAccessFromFileUris := True]
-          WV.webViewSetWebSettings webView wvSettings
 
 -- | Убивает процессы, использующие
 -- порт сервера.

@@ -34,6 +34,9 @@ executable DDChat-exe
                      , process
                      , filepath
                      , directory
+                     , bytestring
+                     , sqlite-simple
+                     , bcrypt
   default-language:    Haskell2010
 
 test-suite DDChat-test

@@ -29,11 +29,14 @@ loginForm = do
   forgotBtn      <- Btn.linkBtn "Забыли пароль?"
   additionalBtns <- Elems.div # set children [ regBtn, forgotBtn ]
                               # set (attr "class") "additional-btns"
-  inpEmail    <- Inp.simpleInput "E-mail" Inp.Simple
-  inpPassword <- Inp.simpleInput "Пароль" Inp.Password
-  btnLogin    <- Btn.importantBtn "Войти"
-  on Events.click btnLogin $ \_ -> (handleLogin inpEmail inpPassword)
-  form <- Elems.div # set children [ inpEmail
+  inpEmail      <- Inp.simpleInput "E-mail" Inp.Simple
+  inpPassword   <- Inp.simpleInput "Пароль" Inp.Password
+  btnLogin      <- Btn.importantBtn "Войти"
+  invalidInpBox <- Elems.div # set (attr "id") "invalid-input-text"
+  on Events.click btnLogin $ \_ ->
+    handleLogin inpEmail inpPassword invalidInpBox
+  form <- Elems.div # set children [ invalidInpBox
+                                   , inpEmail
                                    , inpPassword
                                    , btnLogin
                                    , additionalBtns ]
@@ -44,22 +47,37 @@ loginForm = do
 -- графически уведомляет пользователя
 -- какие действия следует предпринять для
 -- успешного входа.
-handleLogin :: Element -> Element -> UI()
-handleLogin inpEmail inpPassword = do
-  loginResult <- Login.login inpEmail inpPassword
-  mapM_ onFocusRemoveErrClass [ inpEmail, inpPassword ]
-  case loginResult of
-    InvalidValues mistakeIn ->
-      case mistakeIn of
-        InEmailField    -> void (setErrClass inpEmail)
-        InPasswordField -> void (setErrClass inpPassword)
-        InBothFields    -> mapM_ setErrClass [ inpEmail, inpPassword ]
-  return ()
-  where errClass                 = "with-error"
-        setErrClass el           = (return el) # set (attr "class") errClass
-        onFocusRemoveErrClass el =
-          on Events.focus el $ \_ -> Utils.removeClass el errClass
-
+handleLogin :: Element -> Element -> Element -> UI()
+handleLogin inpEmail inpPassword invalidInpBox =
+  let onFocusRemoveErrClass = onFocusRemoveErrClass' invalidInpBox
+      showErrText           = showErrText' invalidInpBox
+  in do
+    loginResult <- Login.login inpEmail inpPassword
+    mapM_ onFocusRemoveErrClass [ inpEmail, inpPassword ]
+    case loginResult of
+      CorrectPassword    -> return () -- TODO: Переход к основному окну.
+      IncorrectPassword  -> void $ showErrText "Введенный пароль неверен."
+      NonexistentAccount -> void $ showErrText "Аккаунта с таким Email не существует."
+      BlockedAccount     -> void $ showErrText "Аккаунт заблокирован."
+      InvalidValues mistakeIn -> do
+        case mistakeIn of
+          InEmailField -> do
+            showErrText "Введите корректный E-mail адрес."
+            void (setErrClass inpEmail)
+          InPasswordField -> do
+            showErrText "Введите корректный пароль."
+            void (setErrClass inpPassword)
+          InBothFields -> do
+            showErrText "Введите корректные данные."
+            mapM_ setErrClass [ inpEmail, inpPassword ]
+    return ()
+  where errClass                = "with-error"
+        setErrClass el          = (return el) # set (attr "class") errClass
+        showErrText' inpBox msg = (return inpBox) # set (attr "class") "with-error"
+                                                  # set text msg
+        onFocusRemoveErrClass' inpBox el =
+          on Events.focus el $ \_ ->
+            mapM_ (flip Utils.removeClass errClass) [ el, inpBox ]
 
 -- Move to registration --------------------------------------------------------
 type Advice   = String

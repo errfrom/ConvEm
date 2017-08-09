@@ -6,17 +6,21 @@ module GUI.Login where
 -- Описывает форму входа.
 --------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
+--Threepenny--------------------------------------------------------------------
 import           Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events
-import qualified GUI.Elements.Button             as Btn
-import qualified GUI.Elements.Input              as Inp   (InputType(..)
-                                                          ,simpleInput)
-import qualified Data.Int                        as Int   (Int64)
-import qualified Data.Char                       as Ch    (isDigit, isUpper)
-import qualified Logic.Login                     as Login (LoginResult(..)
-                                                          ,login)
+--GUI---------------------------------------------------------------------------
+import qualified GUI.Elements.Button as Btn
+import qualified GUI.Elements.Input  as Inp (InputType(..), simpleInput)
+--Logic-------------------------------------------------------------------------
+import qualified Logic.Login as Login (login)
+import           Logic.Login          (MistakeIn(..), LoginResult(..))
+--Other-------------------------------------------------------------------------
+import qualified Utils                (removeClass)
+import qualified Data.Int      as Int (Int64)
+import qualified Data.Char     as Ch  (isDigit, isUpper)
+import           Control.Monad        (void)
 --------------------------------------------------------------------------------
 
 loginForm :: UI Element
@@ -25,7 +29,7 @@ loginForm = do
   forgotBtn      <- Btn.linkBtn "Забыли пароль?"
   additionalBtns <- Elems.div # set children [ regBtn, forgotBtn ]
                               # set (attr "class") "additional-btns"
-  inpEmail    <- Inp.simpleInput "E-mail"  Inp.Simple
+  inpEmail    <- Inp.simpleInput "E-mail" Inp.Simple
   inpPassword <- Inp.simpleInput "Пароль" Inp.Password
   btnLogin    <- Btn.importantBtn "Войти"
   on Events.click btnLogin $ \_ -> (handleLogin inpEmail inpPassword)
@@ -43,7 +47,19 @@ loginForm = do
 handleLogin :: Element -> Element -> UI()
 handleLogin inpEmail inpPassword = do
   loginResult <- Login.login inpEmail inpPassword
-  liftIO $ print loginResult
+  mapM_ onFocusRemoveErrClass [ inpEmail, inpPassword ]
+  case loginResult of
+    InvalidValues mistakeIn ->
+      case mistakeIn of
+        InEmailField    -> void (setErrClass inpEmail)
+        InPasswordField -> void (setErrClass inpPassword)
+        InBothFields    -> mapM_ setErrClass [ inpEmail, inpPassword ]
+  return ()
+  where errClass                 = "with-error"
+        setErrClass el           = (return el) # set (attr "class") errClass
+        onFocusRemoveErrClass el =
+          on Events.focus el $ \_ -> Utils.removeClass el errClass
+
 
 -- Move to registration --------------------------------------------------------
 type Advice   = String

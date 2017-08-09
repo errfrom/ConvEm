@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Logic.Login
-  ( LoginResult(..)
+  ( MistakeIn(..)
+  , LoginResult(..)
   , login ) where
 
 --------------------------------------------------------------------------------

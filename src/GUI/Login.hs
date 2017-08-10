@@ -31,17 +31,20 @@ loginForm = do
                               # set (attr "class") "additional-btns"
   inpEmail      <- Inp.simpleInput "E-mail" Inp.Simple
   inpPassword   <- Inp.simpleInput "Пароль" Inp.Password
-  btnLogin      <- Btn.importantBtn "Войти"
+  dInpEmail     <- wrapDiv inpEmail
+  dInpPassword  <- wrapDiv inpPassword
+  btnLogin      <- Btn.importantBtn "Вперед"
+  btns          <- Elems.div # set children [ btnLogin, additionalBtns ]
   invalidInpBox <- Elems.div # set (attr "id") "invalid-input-text"
   on Events.click btnLogin $ \_ ->
     handleLogin inpEmail inpPassword invalidInpBox
-  form <- Elems.div # set children [ invalidInpBox
-                                   , inpEmail
-                                   , inpPassword
-                                   , btnLogin
-                                   , additionalBtns ]
+  form <- Elems.div # set children [ dInpEmail
+                                   , dInpPassword
+                                   , invalidInpBox
+                                   , btns]
                     # set (attr "class") "main-div"
   Elems.center # set children [ form ]
+  where wrapDiv element = Elems.div # set children [ element ]
 
 -- | При неудачной авторизации,
 -- графически уведомляет пользователя

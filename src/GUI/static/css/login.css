@@ -13,34 +13,59 @@ body
   from { opacity : 0; } to { opacity : 1; }
 }
 
+div
+{
+  padding-top : 10px;
+}
+
 input
 {
-  width         : 300px;
-  height        : 40px;
-  line-height   : 24px;
-  border-width  : 0px;
-  font-family   : PT Sans;
-  color         : #808080; /* light gray */
-  border-radius : 4px;
+  width       : 250px;
+  height      : 40px;
+  line-height : 24px;
+
+  border-radius       : 0px;
+  border-width        : 0px;
+  border-bottom-width : 1px;
+
+  font-family : roboto;
+
+  color : #808080; /* light gray */
+}
+
+input:focus
+{
+  border-bottom-width : 1.5px;
+  border-bottom-color : #F0BB67; /* yellow */
+
+  -webkit-animation-name     : fadeIn;
+  -webkit-animation-duration : 0.5s;
 }
 
 input.with-error
 {
-  color : #F26065; /* soft red */
+  border-bottom-width : 1.5px;
+  border-bottom-color : #F26065; /* soft red */
+
+  -webkit-animation-name     : fadeIn;
+  -webkit-animation-duration : 0.5s;
 }
 
-input.with-error::-webkit-input-placeholder
+input::-webkit-input-placeholder
 {
-  color : #F26065; /* soft red */
+  color : #808080; /* light gray */
 }
 
 button.btn-link
 {
   background-color : white;
-  border-width     : 0px;
-  text-decoration  : underline;
-  font-family      : PT Sans;
   color            : #808080; /* light gray */
+
+  border-width : 0px;
+
+  text-decoration : underline;
+  font-family     : roboto;
+  font-size       : 13px;
 }
 
 button.btn-link:hover
@@ -50,38 +75,39 @@ button.btn-link:hover
 
 button.btn-important
 {
-  background-color           : #5F9EA0; /* green */
+  background-color           : #F0BB67; /* yellow */
   -webkit-animation-name     : fadeIn;
   -webkit-animation-duration : 2s;
   color                      : white;
-  width                      : 300px;
-  height                     : 44px;
-  border-radius              : 0px;
+  width                      : 250px;
+  height                     : 50px;
   border-width               : 0px;
-  font-family                : PT Sans;
+  font-family                : roboto;
   font-size                  : 16px;
+  border-radius              : 3px;
 }
 
 button.btn-important:hover
 {
-  background-color : #66A9AB; /* light green */
+  background: #FFD072;/* light yellow */
 }
 
 button.btn-important:active
 {
-  background-color : #5A9597; /* dark green */
+  background-color : #EDBA6A; /* dark yellow */
 }
 
 .additional-btns
 {
   text-align : center;
   margin     : auto;
+  padding-top : 0px;
 }
 
 .main-div
 {
   -webkit-user-select : none;
-  width               : 300px;
+  width               : 250px;
   height              : 400px;
   margin              : auto;
   position            : absolute;
@@ -89,19 +115,21 @@ button.btn-important:active
   left                : 0;
   right               : 0;
   bottom              : 0;
+  text-align : left;
 }
 
 #invalid-input-text
 {
   opacity     : 0;
-  height      : 20px;
+  height      : 0px;
   color       : #F26065; /* soft red */
   text-align  : left;
   font-size   : 16px;
-  font-family : PT Sans;
+  font-family : roboto;
 }
 
 #invalid-input-text.with-error
 {
+  height : 20px;
   opacity : 1;
 }

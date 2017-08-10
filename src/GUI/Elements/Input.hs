@@ -9,6 +9,11 @@ import qualified Graphics.UI.Threepenny.Elements       as Elems
 
 data InputType = Simple | Password
 
+{-
+instance Functor Element where
+  fmap fun element
+-} -- TODO
+
 simpleInput :: String -> InputType -> UI Element
 simpleInput placeHolder inputType =
   let inpType = case inputType of

@@ -75,18 +75,19 @@ startLocalServer portId = do
 -- функцией 'setup' интерфейса взаимодействия.
 startGtk :: Int -> IO WV.WebView
 startGtk portId =
-  let url             = "http://127.0.0.1:" ++ (show portId)
+  let url       = "http://127.0.0.1:" ++ (show portId)
+      fixedSize = 820 :: Int
   in do
     improvedInitGUI
     window         <- Win.windowNew
     scrolledWindow <- SWin.scrolledWindowNew Nothing Nothing
     webView        <- WV.webViewNew
     Attrs.set window [ Container.containerChild := scrolledWindow
-                     , Win.windowTitle          := "DDChat"
-                     , Win.windowDefaultWidth   := 765
-                     , Win.windowDefaultHeight  := 710 ]
+                     , Win.windowTitle          := "Sheer"
+                     , Win.windowDefaultWidth   := fixedSize
+                     , Win.windowDefaultHeight  := fixedSize ]
     -- Устанавливаем минимальные значения размеров окна
-    Widget.widgetSetSizeRequest window (565 :: Int) (565 :: Int)
+    Widget.widgetSetSizeRequest window fixedSize fixedSize
     Attrs.set scrolledWindow [ Container.containerChild := webView ]
     WV.webViewLoadUri webView url
     Widget.onDestroy window (safeQuit portId)

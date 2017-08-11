@@ -12,14 +12,16 @@ import           Data.ByteString.Char8             (ByteString(..), pack, unpack
 import           Control.Exception                 (catch)
 import qualified System.Directory        as Dir    (getCurrentDirectory)
 --DB----------------------------------------------------------------------------
--- Пока что используем SQLite. После заменим либо MySQL, либо PostgreSQL.
-import qualified Database.SQLite.Simple  as Sqlite (ResultError(..)
-                                                   ,field, open, query)
-import           Database.SQLite.Simple            (FromRow(..), Only(..))
+import qualified Database.MySQL.Simple as MySql
+  (defaultConnectInfo, connect, close, insertID
+  ,withTransaction, query)
+import           Database.MySQL.Simple
+  (ConnectInfo(..), Only(..))
 --------------------------------------------------------------------------------
 
-type Email    = String
-type Password = String
+type Email          = String
+type Password       = String
+type HashedPassword = ByteString
 
 -- | Уточняет, в каком именно
 -- поле совершена ошибка ввода.
@@ -40,11 +42,6 @@ data LoginResult =
  |NonexistentAccount
  |BlockedAccount -- TODO: Продумать логику. (Добавить поле в базу?)
  deriving (Show)
-
-newtype HashedPassword = HashedPassword { hpValue :: Password }
-
-instance FromRow HashedPassword where
-  fromRow = HashedPassword <$> Sqlite.field
 
 -- | Реализация Backend-части авторизации.
 -- Возвращает LoginResult, тем самым
@@ -93,12 +90,10 @@ checkReceivedValues email password
 -- возвращает Nothing.
 getHashedPassword :: Email -> IO (Maybe Password)
 getHashedPassword email =
-  let query = "SELECT PASSWORD FROM USERS WHERE EMAIL = ?"
+  let query = "SELECT USERS_PASSWORD FROM USERS WHERE USER_EMAIL = ?"
   in do
-    currentDir <- Dir.getCurrentDirectory
-    conn       <- Sqlite.open (currentDir ++ "/users.db")
-    sqlResult  <- Sqlite.query conn query (Only email) :: IO [HashedPassword]
-    return $
-      case sqlResult of
-        []               -> Nothing
-        [hashedPassword] -> Just $ hpValue hashedPassword
+    conn <- MySql.connect MySql.defaultConnectInfo -- NOTE: временное решение
+    sqlResult <- MySql.query conn query (Only email) :: IO [Only HashedPassword]
+    return $ case sqlResult of
+               [] -> Nothing
+               [hashedPassword] -> Just $ (unpack . fromOnly) hashedPassword

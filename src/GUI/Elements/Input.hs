@@ -9,10 +9,8 @@ import qualified Graphics.UI.Threepenny.Elements       as Elems
 
 data InputType = Simple | Password
 
-{-
-instance Functor Element where
-  fmap fun element
--} -- TODO
+--applyChildren :: (Element -> Element) -> Element -> Element
+--applyChildren fun element = const element $ map fun (elChildren element)
 
 simpleInput :: String -> InputType -> UI Element
 simpleInput placeHolder inputType =

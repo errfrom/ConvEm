@@ -1,8 +1,1 @@
-@font-face
-{
-  font-family: PT Sans;
-  src: local("PT Sans"),
-       url("Fonts/PTSansBold.ttf");
-  font-weight: normal;
-  font-style:  normal;
-}
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,500,700&subset=cyrillic');

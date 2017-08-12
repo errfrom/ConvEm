@@ -1,6 +1,6 @@
 module GUI.General
   ( bind, as, build, wrap
-  , pInp, sInp, btnLink, btnImportant, invalidBox, additional
+  , hdrText, formText, pInp, sInp, btnLink, btnImportant, invalidBox, additional
   , getElemById ) where
 
 --------------------------------------------------------------------------------
@@ -34,9 +34,10 @@ as :: UI Element -> String -> UI Element
 as el id' = el # setId id'
 
 -- | Строит форму.
-build :: [UI Element] -> UI Element
-build elems = do
+build :: String -> [UI Element] -> UI Element
+build id' elems = do
   form <- Elems.div #  setClass "main-div"
+                    #  setId    id'
                     #+ elems
   Elems.center # set children [ form ]
 
@@ -44,6 +45,14 @@ wrap :: [UI Element] -> UI Element
 wrap elems = Elems.div #+ elems
 
 --Patterns----------------------------------------------------------------------
+
+hdrText :: String -> UI Element
+hdrText text' = Elems.h1 # set text text'
+                        # setClass "hdr-text"
+
+formText :: String -> UI Element
+formText text' = Elems.h2 # set text text'
+                          # setClass "form-text"
 
 pInp :: String -> UI Element
 pInp name = Elems.input # set (attr "placeholder") name
@@ -67,7 +76,7 @@ invalidBox = Elems.div # setId "invalid-input-text"
 additional :: [UI Element] -> UI Element
 additional btns = Elems.div #+ btns
                             # setClass "additional-btns"
-                            
+
 --Other-------------------------------------------------------------------------
 
 getElemById :: Window -> String -> UI Element

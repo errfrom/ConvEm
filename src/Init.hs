@@ -32,7 +32,8 @@ import qualified Graphics.UI.Gtk.Windows.Window           as Win
 import qualified Graphics.UI.Gtk.Scrolling.ScrolledWindow as SWin
   (scrolledWindowNew)
 import qualified Graphics.UI.Gtk.Abstract.Widget          as Widget
-  (onDestroy, widgetShowAll, widgetSetSizeRequest)
+  (Allocation(..), onDestroy, widgetShowAll
+  ,widgetSetSizeRequest, widgetSizeAllocate)
 import qualified Graphics.UI.Gtk.Abstract.Container       as Container
   (containerChild)
 --WebKit------------------------------------------------------------------------
@@ -81,6 +82,7 @@ startGtk portId =
     improvedInitGUI
     window         <- Win.windowNew
     scrolledWindow <- SWin.scrolledWindowNew Nothing Nothing
+    --Widget.widgetSizeAllocate scrolledWindow (Widget.Rectangle 500 500 400 500)
     webView        <- WV.webViewNew
     Attrs.set window [ Container.containerChild := scrolledWindow
                      , Win.windowTitle          := "Sheer"

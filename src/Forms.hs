@@ -21,12 +21,15 @@ data Stage =
 
 loginForm :: Window -> UI Element
 loginForm window = do
-  build [ wrap [ sInp "E-mail" `as` "inp-email" ]
-        , wrap [ pInp "Пароль" `as` "inp-passw" ]
-        , invalidBox
-        , wrap [ btnImportant "Вперед" `bind` (GUILogin.handleLogin window)
-               , additional [ btnLink "Регистрация"    `switch` Reg
-                            , btnLink "Забыли пароль?" `switch` Recovery ]]]
+  build "login-form"
+    [ wrap [ hdrText  "Авторизация"
+           , formText "Введите ваш Email и пароль для продолжения работы." ]
+    , wrap [ sInp "E-mail" `as` "inp-email" ]
+    , wrap [ pInp "Пароль" `as` "inp-passw" ]
+    , invalidBox
+    , wrap [ btnImportant "Вперед" `bind` (GUILogin.handleLogin window)
+           , additional [ btnLink "Регистрация"    `switch` Reg
+                        , btnLink "Забыли пароль?" `switch` Recovery ]]]
 
 switch :: UI Element -> Stage -> UI Element
 switch el' stage = do

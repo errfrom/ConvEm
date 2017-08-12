@@ -125,6 +125,13 @@ button.btn-important:active
   text-align : left;
 }
 
+#login-form.main-div
+{
+  height : 315px;
+  top    : 5%; /* TODO: Реализовать с помощью GTK автоматическое
+                        выравнивание формы по центру. */
+}
+
 #invalid-input-text
 {
   opacity     : 0;
@@ -140,4 +147,20 @@ button.btn-important:active
 {
   height : 20px;
   opacity : 1;
+}
+
+.hdr-text
+{
+  font-family : 'Roboto', sans-serif;
+  font-size   : 17px;
+  font-weight : 500;
+  color       : #565656; /* dark gray */
+}
+
+.form-text
+{
+  font-family : 'Roboto', sans-serif;
+  font-size   : 14px;
+  font-weight : 400;
+  color       : #808080; /* light gray */
 }

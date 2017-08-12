@@ -11,8 +11,7 @@ import           Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events
 --GUI---------------------------------------------------------------------------
-import qualified GUI.Elements.Button as Btn
-import qualified GUI.Elements.Input  as Inp (InputType(..), simpleInput)
+import           GUI.General (getElemById)
 --Logic-------------------------------------------------------------------------
 import qualified Logic.Login as Login (login)
 import           Logic.Login          (MistakeIn(..), LoginResult(..))
@@ -20,60 +19,40 @@ import           Logic.Login          (MistakeIn(..), LoginResult(..))
 import qualified Utils                (removeClass)
 import qualified Data.Int      as Int (Int64)
 import qualified Data.Char     as Ch  (isDigit, isUpper)
+import qualified Data.Maybe    as M   (fromJust)
 import           Control.Monad        (void)
 --------------------------------------------------------------------------------
-
-loginForm :: UI Element
-loginForm = do
-  regBtn         <- Btn.linkBtn "Регистрация"
-  forgotBtn      <- Btn.linkBtn "Забыли пароль?"
-  additionalBtns <- Elems.div # set children [ regBtn, forgotBtn ]
-                              # set (attr "class") "additional-btns"
-  inpEmail      <- Inp.simpleInput "E-mail" Inp.Simple
-  inpPassword   <- Inp.simpleInput "Пароль" Inp.Password
-  dInpEmail     <- wrapDiv inpEmail
-  dInpPassword  <- wrapDiv inpPassword
-  btnLogin      <- Btn.importantBtn "Вперед"
-  btns          <- Elems.div # set children [ btnLogin, additionalBtns ]
-  invalidInpBox <- Elems.div # set (attr "id") "invalid-input-text"
-  on Events.click btnLogin $ \_ ->
-    handleLogin inpEmail inpPassword invalidInpBox
-  form <- Elems.div # set children [ dInpEmail
-                                   , dInpPassword
-                                   , invalidInpBox
-                                   , btns]
-                    # set (attr "class") "main-div"
-  Elems.center # set children [ form ]
-  where wrapDiv element = Elems.div # set children [ element ]
 
 -- | При неудачной авторизации,
 -- графически уведомляет пользователя
 -- какие действия следует предпринять для
 -- успешного входа.
-handleLogin :: Element -> Element -> Element -> UI()
-handleLogin inpEmail inpPassword invalidInpBox =
+handleLogin :: Window -> UI()
+handleLogin window = do
+  invalidInpBox <- getElemById window "invalid-input-text"
+  inpEmail      <- getElemById window "inp-email"
+  inpPassw      <- getElemById window "inp-passw"
   let onFocusRemoveErrClass = onFocusRemoveErrClass' invalidInpBox
       showErrText           = showErrText' invalidInpBox
-  in do
-    loginResult <- Login.login inpEmail inpPassword
-    mapM_ onFocusRemoveErrClass [ inpEmail, inpPassword ]
-    case loginResult of
-      CorrectPassword    -> return () -- TODO: Переход к основному окну.
-      IncorrectPassword  -> void $ showErrText "Введенный пароль неверен."
-      NonexistentAccount -> void $ showErrText "Аккаунта с таким Email не существует."
-      BlockedAccount     -> void $ showErrText "Аккаунт заблокирован."
-      InvalidValues mistakeIn -> do
-        case mistakeIn of
-          InEmailField -> do
-            showErrText "Введите корректный E-mail адрес."
-            void (setErrClass inpEmail)
-          InPasswordField -> do
-            showErrText "Введите корректный пароль."
-            void (setErrClass inpPassword)
-          InBothFields -> do
-            showErrText "Введите корректные данные."
-            mapM_ setErrClass [ inpEmail, inpPassword ]
-    return ()
+  loginResult <- Login.login inpEmail inpPassw
+  mapM_ onFocusRemoveErrClass [ inpEmail, inpPassw ]
+  case loginResult of
+    CorrectPassword    -> return () -- TODO: Переход к основному окну.
+    IncorrectPassword  -> void $ showErrText "Введенный пароль неверен."
+    NonexistentAccount -> void $ showErrText "Аккаунта с таким Email не существует."
+    BlockedAccount     -> void $ showErrText "Аккаунт заблокирован."
+    InvalidValues mistakeIn -> do
+      case mistakeIn of
+        InEmailField -> do
+          showErrText "Введите корректный E-mail адрес."
+          void (setErrClass inpEmail)
+        InPasswordField -> do
+          showErrText "Введите корректный пароль."
+          void (setErrClass inpPassw)
+        InBothFields -> do
+          showErrText "Введите корректные данные."
+          mapM_ setErrClass [ inpEmail, inpPassw ]
+  return ()
   where errClass                = "with-error"
         setErrClass el          = (return el) # set (attr "class") errClass
         showErrText' inpBox msg = (return inpBox) # set (attr "class") "with-error"

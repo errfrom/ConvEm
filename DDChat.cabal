@@ -15,7 +15,13 @@ cabal-version:       >= 1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:
+  exposed-modules:     
+  other-modules:       Init
+                     , Utils
+                     , Forms
+                     , GUI.General
+                     , GUI.Login
+                     , Logic.Login
   build-depends:       base >= 4.7 && < 5
   default-language:    Haskell2010
 

@@ -9,6 +9,7 @@ module Logic.Login
 import           Graphics.UI.Threepenny.Core
 import qualified Crypto.BCrypt           as Crypt  (validatePassword)
 import           Data.ByteString.Char8             (ByteString(..), pack, unpack)
+import qualified Data.Maybe              as M      (fromJust)
 import           Control.Exception                 (catch)
 import qualified System.Directory        as Dir    (getCurrentDirectory)
 --DB----------------------------------------------------------------------------
@@ -47,23 +48,23 @@ data LoginResult =
 -- Возвращает LoginResult, тем самым
 -- делегируя Frontend-логику модулю GUI.Login.
 login :: Element -> Element -> UI LoginResult
-login inpEmail inpPassword = do
-    email    <- getValue inpEmail
-    password <- getValue inpPassword
-    worker email password
-    where worker email password =
-            case (checkReceivedValues email password) of
-              Just mistakeIn -> return (InvalidValues mistakeIn)
-              Nothing        -> do
-                mPasswordHash <- liftIO (getHashedPassword email)
-                return $
-                  case mPasswordHash of
-                    Nothing           -> NonexistentAccount
-                    Just passwordHash -> validatePassword passwordHash password
-          getValue = get value
-          validatePassword ph pd
-           |Crypt.validatePassword (pack ph) (pack pd) == True = CorrectPassword
-           |otherwise = IncorrectPassword
+login inpEmail inpPassw = do
+  email    <- getValue inpEmail
+  password <- getValue inpPassw
+  worker email password
+  where worker email password =
+          case (checkReceivedValues email password) of
+            Just mistakeIn -> return (InvalidValues mistakeIn)
+            Nothing        -> do
+              mPasswordHash <- liftIO (getHashedPassword email)
+              return $
+                case mPasswordHash of
+                  Nothing           -> NonexistentAccount
+                  Just passwordHash -> validatePassword passwordHash password
+        getValue = get value
+        validatePassword ph pd
+         |Crypt.validatePassword (pack ph) (pack pd) == True = CorrectPassword
+         |otherwise = IncorrectPassword
 
 -- | Проверяет, могут ли существовать
 -- введенные пользователем значения.

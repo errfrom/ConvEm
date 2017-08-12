@@ -33,12 +33,12 @@ input
   border-bottom-color : #DCDCDC; /* light gray */
 
   font-family : 'Roboto', sans-serif;
-  color       : black;
+  color       : #565656; /* dark gray */
 }
 
 input:focus
 {
-  -webkit-transition : all 0.5s;
+  -webkit-transition : all 0.2s;
 
   border-bottom-width : 1.5px;
   border-bottom-color : #F0BB67; /* yellow */
@@ -59,12 +59,13 @@ input::-webkit-input-placeholder
 
 button.btn-link
 {
+  -webkit-transition : all 0.5s;
+
   background-color : white;
   color            : #808080; /* light gray */
 
   border-width : 0px;
 
-  text-decoration : underline;
   font-family     : 'Roboto', sans-serif;
   font-weight     : 500;
   font-size       : 13px;
@@ -72,7 +73,7 @@ button.btn-link
 
 button.btn-link:hover
 {
-  text-decoration : none;
+  color : #565656; /* dark gray */
 }
 
 button.btn-important
@@ -88,7 +89,7 @@ button.btn-important
   border-width               : 0px;
   font-family                : 'Roboto', sans-serif;
   font-size                  : 16px;
-  font-weight                : 700;
+  font-weight                : 500;
   border-radius              : 3px;
 }
 

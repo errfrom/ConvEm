@@ -1,4 +1,4 @@
-module GUI.Main
+module Init
   ( initInterface ) where
 
 --------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ import qualified Graphics.UI.Gtk.Abstract.Container       as Container
 import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
   (WebView(..), webViewNew, webViewLoadUri)
 --My----------------------------------------------------------------------------
-import qualified GUI.Login as Login (loginForm)
+import qualified Forms
 --------------------------------------------------------------------------------
 
 -- | Основная функция, запускающая
@@ -67,7 +67,7 @@ startLocalServer portId = do
           return window # UI.set UI.title "DDChat"
           Elems.addStyleSheet window "fonts.css"
           Elems.addStyleSheet window "login.css"
-          loginForm <- Login.loginForm
+          loginForm <- Forms.loginForm window
           UI.getBody window #+ [UI.element loginForm]
 
 -- | Инициализирует GTK GUI,

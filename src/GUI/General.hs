@@ -1,7 +1,7 @@
 module GUI.General
   ( bind, as, build, wrap
   , hdrText, formText, pInp, sInp, btnLink, btnImportant, invalidBox, additional
-  , getElemById ) where
+  , short, getElemById ) where
 
 --------------------------------------------------------------------------------
 -- Содержит часто используемые элементы, а также
@@ -44,11 +44,14 @@ build id' elems = do
 wrap :: [UI Element] -> UI Element
 wrap elems = Elems.div #+ elems
 
+short :: UI Element -> UI Element
+short el = el # setClass "short"
+
 --Patterns----------------------------------------------------------------------
 
 hdrText :: String -> UI Element
 hdrText text' = Elems.h1 # set text text'
-                        # setClass "hdr-text"
+                         # setClass "hdr-text"
 
 formText :: String -> UI Element
 formText text' = Elems.h2 # set text text'

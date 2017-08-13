@@ -1,5 +1,5 @@
 module Utils
-  ( removeClass ) where
+  ( removeClass, checkEmail ) where
 
 import           Text.Printf                                   (printf)
 import           Graphics.UI.Threepenny.Core
@@ -14,6 +14,17 @@ removeClass element class' =
   let jsPattern = printf ".removeClass('%s')" class'
       jsFun     = UIJS.ffi ("$(%1)" ++ jsPattern) element
   in UIJS.runFunction jsFun
+
+-- | Проверяет, может ли существовать подобный email.
+checkEmail email
+ |isBlank email          = False
+ |(not . elem '@') email = False -- Нет '@' в строке
+ |(length . flip filter email) (== '@') /= 1 = False -- Несколько '@'
+ |(not . elem '.' . afterEmailSymbol) email  = False -- Нет '.' после '@'
+ |last email == '.' = False -- Заканчивается на '.'
+ |otherwise         = True
+ where afterEmailSymbol email = (tail . snd . flip break email) (== '@')
+       isBlank value          = length value == 0
 
 {-
 getChildren :: Element -> UI [Element]

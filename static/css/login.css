@@ -1,11 +1,13 @@
+/** GENERAL *******************************************************************/
+
 body
 {
-  background-color: "white";
+  background-color: white;
 }
 
 *
 {
-  outline : none;
+  outline                : none;
   -webkit-font-smoothing : antialiased;
 }
 
@@ -14,10 +16,7 @@ body
   from { opacity : 0; } to { opacity : 1; }
 }
 
-div
-{
-  padding-top : 10px;
-}
+/** INPUT *********************************************************************/
 
 input
 {
@@ -33,6 +32,7 @@ input
   border-bottom-color : #DCDCDC; /* light gray */
 
   font-family : 'Roboto', sans-serif;
+  font-weight : 400;
   color       : #565656; /* dark gray */
 }
 
@@ -44,6 +44,12 @@ input:focus
   border-bottom-color : #F0BB67; /* yellow */
 }
 
+input::-webkit-input-placeholder
+{
+  color : #808080; /* light gray */
+}
+
+/* Поле ввода подсвечивается красным цветом если возникает ошибка. */
 input.with-error
 {
   -webkit-transition : all 0.5s;
@@ -52,10 +58,13 @@ input.with-error
   border-bottom-color : #F26065; /* soft red */
 }
 
-input::-webkit-input-placeholder
+/* Поле ввода меньшей длины. Помещается с таким же полем в одну строку. */
+input.short
 {
-  color : #808080; /* light gray */
+  width : 130px;
 }
+
+/** BUTTON ********************************************************************/
 
 button.btn-link
 {
@@ -82,7 +91,7 @@ button.btn-important
 
   background-color           : #F0BB67; /* yellow */
   -webkit-animation-name     : fadeIn;
-  -webkit-animation-duration : 2s;
+  -webkit-animation-duration : 0.7s;
   color                      : white;
   width                      : 260px;
   height                     : 50px;
@@ -104,6 +113,13 @@ button.btn-important:active
   background-color : #EDBA6A; /* dark yellow */
 }
 
+/** DIV ***********************************************************************/
+
+div
+{
+  padding-top : 10px;
+}
+
 .additional-btns
 {
   text-align : center;
@@ -115,22 +131,27 @@ button.btn-important:active
 {
   -webkit-user-select : none;
   width               : 260px;
-  height              : 400px;
   margin              : auto;
   position            : absolute;
-  top                 : 20%;
   left                : 0;
   right               : 0;
   bottom              : 0;
-  text-align : left;
+  text-align          : left;
 }
 
 #login-form.main-div
 {
   height : 315px;
-  top    : 5%; /* TODO: Реализовать с помощью GTK автоматическое
-                        выравнивание формы по центру. */
+  top    : 5%;
 }
+
+#recovery-form.main-div
+{
+  top    : 0%;
+  height : 240px;
+}
+
+/** TEXT BOXES ****************************************************************/
 
 #invalid-input-text
 {
@@ -145,7 +166,7 @@ button.btn-important:active
 
 #invalid-input-text.with-error
 {
-  height : 20px;
+  height  : 20px;
   opacity : 1;
 }
 

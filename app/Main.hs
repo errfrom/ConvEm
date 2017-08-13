@@ -1,4 +1,8 @@
 module Main where
 
+--------------------------------------------------------------------------------
+import qualified Init (initInterface)
+--------------------------------------------------------------------------------
+
 main :: IO ()
-main = return()
+main = Init.initInterface

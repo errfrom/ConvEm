@@ -1,9 +1,8 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module GUI.Login where
 
 --------------------------------------------------------------------------------
--- Описывает форму входа.
+-- Обрабатывает события авторизации.
+-- Отображает результаты этих событий графически.
 --------------------------------------------------------------------------------
 
 --Threepenny--------------------------------------------------------------------
@@ -11,14 +10,13 @@ import           Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events
 --GUI---------------------------------------------------------------------------
-import           GUI.General (getElemById)
+import GUI.General (getElemById)
 --Logic-------------------------------------------------------------------------
 import qualified Logic.Login as Login (login)
 import           Logic.Login          (MistakeIn(..), LoginResult(..))
 --Other-------------------------------------------------------------------------
 import qualified Utils                (removeClass)
 import qualified Data.Int      as Int (Int64)
-import qualified Data.Char     as Ch  (isDigit, isUpper)
 import qualified Data.Maybe    as M   (fromJust)
 import           Control.Monad        (void)
 --------------------------------------------------------------------------------
@@ -60,27 +58,3 @@ handleLogin window = do
         onFocusRemoveErrClass' inpBox el =
           on Events.focus el $ \_ ->
             mapM_ (flip Utils.removeClass errClass) [ el, inpBox ]
-
--- Move to registration --------------------------------------------------------
-type Advice   = String
-type Password = String
-
-checkPassword :: Password -> [Advice]
-checkPassword password = worker password [checkLength, checkNumbers, checkUpper]
- where worker :: Password -> [(Password -> Maybe Advice)] -> [Advice]
-       worker _ [] = []
-       worker password (fun:funcs) =
-         case (fun password) of
-           Just advice -> advice : (worker password funcs)
-           Nothing     -> [] ++ (worker password funcs)
-
-       checkLength password
-        |length password >= 9 = Nothing
-        |otherwise            = Just "быть не короче 9 символов."
-       checkNumbers password
-        |length (filter Ch.isDigit password) >= 2 = Nothing
-        |otherwise                                = Just "содержать не менее 2 цифр."
-       checkUpper password
-        |length (filter Ch.isUpper password) >= 1 = Nothing
-        |otherwise                                = Just "содержать заглваную букву."
--- Move to registration --------------------------------------------------------

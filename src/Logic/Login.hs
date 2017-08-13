@@ -12,6 +12,8 @@ import           Data.ByteString.Char8             (ByteString(..), pack, unpack
 import qualified Data.Maybe              as M      (fromJust)
 import           Control.Exception                 (catch)
 import qualified System.Directory        as Dir    (getCurrentDirectory)
+import           Utils                             (checkEmail)
+import           Logic.General           
 --DB----------------------------------------------------------------------------
 import qualified Database.MySQL.Simple as MySql
   (defaultConnectInfo, connect, close, insertID
@@ -19,20 +21,6 @@ import qualified Database.MySQL.Simple as MySql
 import           Database.MySQL.Simple
   (ConnectInfo(..), Only(..))
 --------------------------------------------------------------------------------
-
-type Email          = String
-type Password       = String
-type HashedPassword = ByteString
-
--- | Уточняет, в каком именно
--- поле совершена ошибка ввода.
--- Тем самым, дает дополнительную
--- информацию Frontend-логике.
-data MistakeIn =
-  InEmailField
- |InPasswordField
- |InBothFields
- deriving (Show)
 
 -- | Описывает результат запроса
 -- пользователя на вход.
@@ -77,14 +65,6 @@ checkReceivedValues email password
   where (!&&) a b = (not a) && (not b)
         isBlank value = length value == 0
         checkPassword = (not . isBlank)
-        checkEmail email -- | Проверяет, может ли существовать подобный email.
-         |isBlank email          = False
-         |(not . elem '@') email = False -- Нет '@' в строке
-         |(length . flip filter email) (== '@') /= 1 = False -- Несколько '@'
-         |(not . elem '.' . afterEmailSymbol) email  = False -- Нет '.' после '@'
-         |last email == '.' = False -- Заканчивается на '.'
-         |otherwise         = True
-         where afterEmailSymbol email = (tail . snd . flip break email) (== '@')
 
 -- Получает хеш пароля по указанному значению
 -- поля email. Если пользователь отсутствует в базе,

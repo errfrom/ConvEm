@@ -60,7 +60,7 @@ initInterface =
 startLocalServer :: Int -> IO()
 startLocalServer portId = do
   currentDir <- Dir.getCurrentDirectory
-  let pathStatic = currentDir ++ ("/src/GUI/static/")
+  let pathStatic = currentDir ++ ("/static/")
       config = UI.defaultConfig { UI.jsPort   = Just portId
                                 , UI.jsStatic = Just pathStatic }
   UI.startGUI config setup
@@ -76,8 +76,9 @@ startLocalServer portId = do
 -- функцией 'setup' интерфейса взаимодействия.
 startGtk :: Int -> IO WV.WebView
 startGtk portId =
-  let url       = "http://127.0.0.1:" ++ (show portId)
-      fixedSize = 820 :: Int
+  let url         = "http://127.0.0.1:" ++ (show portId)
+      minSize     = 500 :: Int
+      defaultSize = 700
   in do
     improvedInitGUI
     window         <- Win.windowNew
@@ -86,10 +87,10 @@ startGtk portId =
     webView        <- WV.webViewNew
     Attrs.set window [ Container.containerChild := scrolledWindow
                      , Win.windowTitle          := "Sheer"
-                     , Win.windowDefaultWidth   := fixedSize
-                     , Win.windowDefaultHeight  := fixedSize ]
+                     , Win.windowDefaultWidth   := defaultSize
+                     , Win.windowDefaultHeight  := defaultSize ]
     -- Устанавливаем минимальные значения размеров окна
-    Widget.widgetSetSizeRequest window fixedSize fixedSize
+    Widget.widgetSetSizeRequest window minSize minSize
     Attrs.set scrolledWindow [ Container.containerChild := webView ]
     WV.webViewLoadUri webView url
     Widget.onDestroy window (safeQuit portId)

@@ -18,7 +18,8 @@ import qualified System.Process         as Process (system
 import qualified System.Info            as SysInfo (os)
 import qualified System.Glib.Attributes as Attrs   (set)
 import           System.Glib.Attributes            (AttrOp((:=)))
-import qualified System.Directory       as Dir     (getCurrentDirectory)
+import qualified System.Directory       as Dir     (getCurrentDirectory
+                                                   ,removeDirectoryRecursive)
 --Threpenny---------------------------------------------------------------------
 import qualified Graphics.UI.Threepenny.Core     as UI
 import qualified Graphics.UI.Threepenny.Elements as Elems (addStyleSheet)
@@ -129,4 +130,7 @@ safeQuit portId = do
           (exitCode, stdout', _) <- linuxReadProcess portId
           case exitCode of
             Exit.ExitFailure _ -> return ()
-            Exit.ExitSuccess   -> (void . linuxKillProcess) stdout'
+            Exit.ExitSuccess   -> do
+              current <- Dir.getCurrentDirectory
+              Dir.removeDirectoryRecursive (current ++ "/static")
+              (void . linuxKillProcess) stdout'

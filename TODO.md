@@ -8,5 +8,5 @@
 
 ## Other
 - [ ] Windows 'safeQuit'
-- [ ] Form to center
-- [ ] Shell build script
+- [x] Form to center
+- [x] Shell build script

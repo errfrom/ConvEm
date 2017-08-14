@@ -23,26 +23,26 @@ data Stage =
 loginForm :: Window -> UI Element
 loginForm window = do
   build "login-form"
-    [ wrap [ hdrText  "Авторизация"
-           , formText "Введите ваш E-mail и пароль для продолжения работы." ]
-    , wrap [ sInp "E-mail" `as` "inp-email" ]
-    , wrap [ pInp "Пароль" `as` "inp-passw" ]
-    , invalidBox
-    , wrap [ btnImportant "Вперед" `bind` (GUILogin.handleLogin window)
-           , additional [ btnLink "Регистрация"    `switch` Reg
-                        , btnLink "Забыли пароль?" `switch` Recovery ]]]
+    [ wrap [ add (LblHeader "Авторизация")
+           , add (LblDesc   "Введите ваш E-mail и пароль для продолжения работы.") ]
+    , wrap [ add (InpSimple "E-mail"  ) `as` "inp-email" ]
+    , wrap [ add (InpPassword "Пароль") `as` "inp-passw" ]
+    , add LblInvalid
+    , wrap [ add (BtnImportant "Вперед") `bind` (GUILogin.handleLogin window)
+           , additional [ add (BtnLink "Регистрация"   ) `switch` Reg
+                        , add (BtnLink "Забыли пароль?") `switch` Recovery ]]]
 
 -- | Форма восстановления пароля.
 recoveryForm :: Window -> UI Element
 recoveryForm window = do
   build "recovery-form"
-    [ wrap [ hdrText  "Восстановление пароля"
-           , formText "На ваш E-mail будет отправлен ключ для смены пароля." ]
-    , wrap [ sInp "E-mail" `as` "inp-email" ]
-    , invalidBox
-    , wrap [ btnImportant "Отправить" `bind` return ()
-           , additional [ btnLink "Вернуться назад" `switch` Auth
-                        , btnLink "Не пришел ключ?" ]]]
+    [ wrap [ add (LblHeader "Восстановление пароля")
+           , add (LblDesc "На ваш E-mail будет отправлен ключ для смены пароля.") ]
+    , wrap [ add (InpSimple "E-mail") `as` "inp-email" ]
+    , add LblInvalid
+    , wrap [ add (BtnImportant "Отправить") `bind` return ()
+           , additional [ add (BtnLink "Вернуться назад") `switch` Auth
+                        , add (BtnLink "Не пришел ключ?") ]]]
 
 switch :: UI Element -> Stage -> UI Element
 switch el' stage = do

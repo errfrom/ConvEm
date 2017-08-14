@@ -1,7 +1,7 @@
 module GUI.General
-  ( bind, as, build, wrap
-  , hdrText, formText, pInp, sInp, btnLink, btnImportant, invalidBox, additional
-  , short, getElemById ) where
+  ( Concretized(..), ButtonKind(..), InputKind(..), LabelKind(..)
+  , bind, as, build, wrap, short, additional
+  , getElemById ) where
 
 --------------------------------------------------------------------------------
 -- Содержит часто используемые элементы, а также
@@ -19,6 +19,44 @@ import qualified Data.Maybe as M (fromJust)
 
 setClass class' = set (attr "class") class'
 setId    id'    = set (attr "id")    id'
+setText  text'  = set text text'
+
+--Concretized Elements----------------------------------------------------------
+
+data ButtonKind =
+  BtnImportant String
+ |BtnLink      String
+
+data InputKind =
+  InpSimple   String
+ |InpPassword String
+
+data LabelKind =
+  LblHeader  String
+ |LblDesc    String
+ |LblInvalid
+
+class Concretized t where
+  add :: t -> UI Element
+
+instance Concretized ButtonKind where
+  add (BtnImportant text) = Elems.button # setText text
+                                         # setClass "btn-important"
+  add (BtnLink text)      = Elems.button # setText text
+                                         # setClass "btn-link"
+
+instance Concretized InputKind where
+  add (InpSimple text)   = Elems.input # set (attr "placeholder") text
+                                       # set (attr "type") "simple"
+  add (InpPassword text) = Elems.input # set (attr "placeholder") text
+                                       # set (attr "type") "password"
+
+instance Concretized LabelKind where
+  add (LblHeader text)  = Elems.h1  # setText text
+                                    # setClass "hdr-text"
+  add (LblDesc text)    = Elems.h2  # setText text
+                                    # setClass "form-text"
+  add LblInvalid        = Elems.div # setId "invalid-input-text"
 
 --Builders----------------------------------------------------------------------
 
@@ -46,35 +84,6 @@ wrap elems = Elems.div #+ elems
 
 short :: UI Element -> UI Element
 short el = el # setClass "short"
-
---Patterns----------------------------------------------------------------------
-
-hdrText :: String -> UI Element
-hdrText text' = Elems.h1 # set text text'
-                         # setClass "hdr-text"
-
-formText :: String -> UI Element
-formText text' = Elems.h2 # set text text'
-                          # setClass "form-text"
-
-pInp :: String -> UI Element
-pInp name = Elems.input # set (attr "placeholder") name
-                        # set (attr "type") "password"
-
-sInp :: String -> UI Element
-sInp name = Elems.input # set (attr "placeholder") name
-                        # set (attr "type") "simple"
-
-btnLink :: String -> UI Element
-btnLink name = Elems.button # set text name
-                            # setClass "btn-link"
-
-btnImportant :: String -> UI Element
-btnImportant name = Elems.button # set text name
-                                 # setClass "btn-important"
-
-invalidBox :: UI Element
-invalidBox = Elems.div # setId "invalid-input-text"
 
 additional :: [UI Element] -> UI Element
 additional btns = Elems.div #+ btns

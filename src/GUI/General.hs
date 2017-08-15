@@ -10,16 +10,18 @@ module GUI.General
 --------------------------------------------------------------------------------
 
 import           Graphics.UI.Threepenny.Core
+import           Graphics.UI.Threepenny.Canvas             (textFont)
+import           Reactive.Threepenny                       (Event(..))
 import qualified Graphics.UI.Threepenny.Elements as Elems
-import qualified Graphics.UI.Threepenny.Events   as Events (click)
+import qualified Graphics.UI.Threepenny.Events   as Events (click, valueChange)
 
 import qualified Data.Maybe as M (fromJust)
+import qualified Utils           (removeClass, getElemType)
 
 --Attr setters------------------------------------------------------------------
 
-setClass class' = set (attr "class") class'
-setId    id'    = set (attr "id")    id'
-setText  text'  = set text text'
+setId   id'    = set (attr "id")    id'
+setText text'  = set text text'
 
 --Concretized Elements----------------------------------------------------------
 
@@ -41,21 +43,21 @@ class Concretized t where
 
 instance Concretized ButtonKind where
   add (BtnImportant text) = Elems.button # setText text
-                                         # setClass "btn-important"
+                                         #. "btn-important"
   add (BtnLink text)      = Elems.button # setText text
-                                         # setClass "btn-link"
+                                         #. "btn-link"
 
 instance Concretized InputKind where
-  add (InpSimple text)   = Elems.input # set (attr "placeholder") text
-                                       # set (attr "type") "simple"
-  add (InpPassword text) = Elems.input # set (attr "placeholder") text
-                                       # set (attr "type") "password"
+  add (InpSimple text)   = handleFilled =<< Elems.input # set (attr "placeholder") text
+                                                        # set (attr "type") "simple"
+  add (InpPassword text) = handleFilled =<< Elems.input # set (attr "placeholder") text
+                                                        # set (attr "type") "password"
 
 instance Concretized LabelKind where
   add (LblHeader text)  = Elems.h1  # setText text
-                                    # setClass "hdr-text"
+                                    #.  "hdr-text"
   add (LblDesc text)    = Elems.h2  # setText text
-                                    # setClass "form-text"
+                                    #. "form-text"
   add LblInvalid        = Elems.div # setId "invalid-input-text"
 
 --Builders----------------------------------------------------------------------
@@ -74,7 +76,7 @@ as el id' = el # setId id'
 -- | Строит форму.
 build :: String -> [UI Element] -> UI Element
 build id' elems = do
-  form <- Elems.div #  setClass "main-div"
+  form <- Elems.div #. "main-div"
                     #  setId    id'
                     #+ elems
   Elems.center # set children [ form ]
@@ -83,13 +85,46 @@ wrap :: [UI Element] -> UI Element
 wrap elems = Elems.div #+ elems
 
 short :: UI Element -> UI Element
-short el = el # setClass "short"
+short el = el #. "short"
 
 additional :: [UI Element] -> UI Element
 additional btns = Elems.div #+ btns
-                            # setClass "additional-btns"
+                            #. "additional-btns"
 
 --Other-------------------------------------------------------------------------
+
+-- | Рассчитывает, когда следует спрятать placeholder элемента input и
+-- устанавливает соответствующее событие.
+handleFilled :: Element -> UI Element
+handleFilled inp =
+  let font = "14px Roboto"
+  in do
+    phText <- callFunction (ffi "$(%1).attr('placeholder')" inp :: JSFunction String)
+    phSize <- getTextWidth phText font
+    on Events.valueChange inp $ \val -> worker val phSize font
+    return inp
+  where worker val phSize font =
+          let maxSize      = 260 - phSize
+              classFilled  = "filled"
+          in do
+            elType    <- Utils.getElemType inp
+            textWidth <- case elType of
+                           "password" -> do
+                             startWidth <- getTextWidth "•" font
+                             return $ (length val) * startWidth
+                           _          -> (getTextWidth val font :: UI Int)
+            if textWidth > (maxSize - 20) -- Небольшой отступ (px)
+              then (return inp) #. classFilled
+              else Utils.removeClass inp classFilled >> return inp
+
+        getTextWidth txt font =
+          let js = "function get_text_width() {"
+                ++    "this.element = document.createElement('canvas');"
+                ++    "this.context = this.element.getContext('2d');"
+                ++    "this.context.font = '" ++ font ++ "';"
+                ++    "return this.context.measureText('" ++ txt ++ "').width; }"
+                ++ "get_text_width();"
+          in (callFunction . ffi) js >>= return
 
 getElemById :: Window -> String -> UI Element
 getElemById w id' = do

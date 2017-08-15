@@ -34,7 +34,7 @@ import qualified Graphics.UI.Gtk.Scrolling.ScrolledWindow as SWin
   (scrolledWindowNew)
 import qualified Graphics.UI.Gtk.Abstract.Widget          as Widget
   (Allocation(..), onDestroy, widgetShowAll
-  ,widgetSetSizeRequest, widgetSizeAllocate)
+  ,widgetSetSizeRequest)
 import qualified Graphics.UI.Gtk.Abstract.Container       as Container
   (containerChild)
 --WebKit------------------------------------------------------------------------
@@ -61,7 +61,7 @@ initInterface =
 startLocalServer :: Int -> IO()
 startLocalServer portId = do
   currentDir <- Dir.getCurrentDirectory
-  let pathStatic = currentDir ++ ("/static/")
+  let pathStatic = currentDir ++ ("/.static/")
       config = UI.defaultConfig { UI.jsPort   = Just portId
                                 , UI.jsStatic = Just pathStatic }
   UI.startGUI config setup
@@ -84,7 +84,6 @@ startGtk portId =
     improvedInitGUI
     window         <- Win.windowNew
     scrolledWindow <- SWin.scrolledWindowNew Nothing Nothing
-    --Widget.widgetSizeAllocate scrolledWindow (Widget.Rectangle 500 500 400 500)
     webView        <- WV.webViewNew
     Attrs.set window [ Container.containerChild := scrolledWindow
                      , Win.windowTitle          := "Sheer"
@@ -132,5 +131,6 @@ safeQuit portId = do
             Exit.ExitFailure _ -> return ()
             Exit.ExitSuccess   -> do
               current <- Dir.getCurrentDirectory
-              Dir.removeDirectoryRecursive (current ++ "/static")
+              Dir.removeDirectoryRecursive (current ++ "/.static") `catch`
+                \(Exc.SomeException _) -> return()
               (void . linuxKillProcess) stdout'

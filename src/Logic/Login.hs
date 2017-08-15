@@ -13,7 +13,7 @@ import qualified Data.Maybe              as M      (fromJust)
 import           Control.Exception                 (catch)
 import qualified System.Directory        as Dir    (getCurrentDirectory)
 import           Utils                             (checkEmail)
-import           Logic.General           
+import           Logic.General
 --DB----------------------------------------------------------------------------
 import qualified Database.MySQL.Simple as MySql
   (defaultConnectInfo, connect, close, insertID

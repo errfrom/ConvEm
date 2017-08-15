@@ -33,7 +33,7 @@ def replace_special_notation(main_file, current):
             to_write = f.read().replace("\n", "\\n")
         return out_data.replace(notation, to_write)
 
-    css_path = current + os.sep.join(["static", "css"]) + os.sep
+    css_path = current + os.sep.join([".static", "css"]) + os.sep
     fonts_css = css_path + "fonts.css"
     login_css = css_path + "login.css"
     with open(main_file, "r", encoding="utf8") as f:

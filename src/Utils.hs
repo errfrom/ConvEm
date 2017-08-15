@@ -1,5 +1,5 @@
 module Utils
-  ( removeClass, checkEmail ) where
+  ( removeClass, getElemType, checkEmail ) where
 
 import           Text.Printf                                   (printf)
 import           Graphics.UI.Threepenny.Core
@@ -14,6 +14,9 @@ removeClass element class' =
   let jsPattern = printf ".removeClass('%s')" class'
       jsFun     = UIJS.ffi ("$(%1)" ++ jsPattern) element
   in UIJS.runFunction jsFun
+
+getElemType :: Element -> UI String
+getElemType el = UIJS.callFunction (UIJS.ffi "$(%1).attr('type')" el) >>= return
 
 -- | Проверяет, может ли существовать подобный email.
 checkEmail email

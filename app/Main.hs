@@ -17,7 +17,7 @@ sep = pathSeparator : []
 prepareAdditionalFiles :: IO ()
 prepareAdditionalFiles = do
   current <- Dir.getCurrentDirectory
-  let static = current ++ sep ++ "static" ++ sep
+  let static = current ++ sep ++ ".static" ++ sep
       css    = static ++ "css" ++ sep
       fonts  = css ++ "fonts.css"
       login  = css ++ "login.css"

@@ -20,11 +20,8 @@ body
 
 input
 {
-  -webkit-transition : all 1s;
-
   width       : 260px;
   height      : 40px;
-  line-height : 24px;
 
   border-radius       : 0px;
   border-width        : 0px;
@@ -33,26 +30,37 @@ input
 
   font-family : 'Roboto', sans-serif;
   font-weight : 400;
+  font-size   : 14px;
   color       : #565656; /* dark gray */
+
+}
+
+input.filled::-webkit-input-placeholder
+{
+  -webkit-transition : opacity 0.5s;
+  opacity : 0;
 }
 
 input:focus
 {
-  -webkit-transition : all 0.2s;
-
   border-bottom-width : 1.5px;
   border-bottom-color : #F0BB67; /* yellow */
 }
 
 input::-webkit-input-placeholder
 {
-  -webkit-transition : all 0.2s;
+  -webkit-transition : opacity 0.5s;
+
+  opacity    : 1;
+  text-align : left;
+
   color : #808080; /* light gray */
 }
 
 input:focus::-webkit-input-placeholder
 {
-  opacity : 0;
+  text-align : right;
+  visibility : visible !important;
 }
 
 /* Поле ввода подсвечивается красным цветом если возникает ошибка. */

@@ -25,6 +25,7 @@ library
                      , Logic.General
                      , Logic.Login
                      , Logic.Recovery
+                     , Server.Init
   build-depends:       base >= 4.7 && < 5
                      , threepenny-gui
                      , gtk
@@ -37,6 +38,7 @@ library
                      , bytestring
                      , mysql-simple
                      , bcrypt
+                     , word8
   default-language:    Haskell2010
 
 executable DDChat-exe

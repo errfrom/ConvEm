@@ -42,6 +42,7 @@ import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
   (WebView(..), webViewNew, webViewLoadUri)
 --My----------------------------------------------------------------------------
 import qualified Forms
+import qualified Server.Init as Server (initServer)
 --------------------------------------------------------------------------------
 
 -- | Основная функция, запускающая
@@ -51,7 +52,7 @@ initInterface :: IO()
 initInterface =
   let portId = 8010
   in do
-    _ <- Conc.forkIO (startLocalServer portId)
+    mapM_ Conc.forkIO [ startLocalServer portId, Server.initServer ]
     webView <- startGtk portId
     return ()
 
@@ -61,7 +62,7 @@ initInterface =
 startLocalServer :: Int -> IO()
 startLocalServer portId = do
   currentDir <- Dir.getCurrentDirectory
-  let pathStatic = currentDir ++ ("/.static/")
+  let pathStatic = currentDir ++ ("/static/")
       config = UI.defaultConfig { UI.jsPort   = Just portId
                                 , UI.jsStatic = Just pathStatic }
   UI.startGUI config setup

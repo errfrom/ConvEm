@@ -5,6 +5,7 @@ module Forms where
 -- Связывает GUI и Logic.
 --------------------------------------------------------------------------------
 
+import           Server.General
 import           Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events
@@ -22,13 +23,14 @@ data Stage =
 -- | Форма авторизации.
 loginForm :: Window -> UI Element
 loginForm window = do
+  sock <- liftIO (initSocket ClientSocket)
   build "login-form"
     [ wrap [ add (LblHeader "Авторизация")
            , add (LblDesc   "Введите ваш E-mail и пароль для продолжения работы.") ]
     , wrap [ add (InpSimple "E-mail"  ) `as` "inp-email" ]
     , wrap [ add (InpPassword "Пароль") `as` "inp-passw" ]
     , add LblInvalid
-    , wrap [ add (BtnImportant "Вперед") `bind` (GUILogin.handleLogin window)
+    , wrap [ add (BtnImportant "Вперед") `bind` (GUILogin.handleLogin sock window)
            , additional [ add (BtnLink "Регистрация"   ) `switch` Reg
                         , add (BtnLink "Забыли пароль?") `switch` Recovery ]]]
 

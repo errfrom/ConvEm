@@ -1,11 +1,10 @@
 module Logic.General
-  (Email, Password, HashedPassword
-  ,MistakeIn(..)) where
+  (Email, HashedPassword
+  ,MistakeIn(..), UserData(..), LoginResult(..)) where
 
 import Data.ByteString (ByteString(..))
 
-type Email          = String
-type Password       = String
+type Email          = ByteString
 type HashedPassword = ByteString
 
 -- | Уточняет, в каком именно
@@ -17,3 +16,17 @@ data MistakeIn =
  |InPasswordField
  |InBothFields
  deriving (Show)
+
+-- | Описывает результат запроса
+-- пользователя на вход.
+data LoginResult =
+   InvalidValues MistakeIn -- Поля входа заполнены не правильно. (см. checkReceivedValues)
+  |CorrectPassword
+  |IncorrectPassword
+  |NonexistentAccount
+  |BlockedAccount -- TODO: Продумать логику. (Добавить поле в базу?)
+  deriving (Show)
+
+data UserData =
+  LoginData { lEmail    :: Email
+            , lPassword :: HashedPassword }

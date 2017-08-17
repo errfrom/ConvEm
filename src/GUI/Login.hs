@@ -13,7 +13,8 @@ import qualified Graphics.UI.Threepenny.Events   as Events
 import GUI.General (getElemById)
 --Logic-------------------------------------------------------------------------
 import qualified Logic.Login as Login (login)
-import           Logic.Login          (MistakeIn(..), LoginResult(..))
+import           Logic.General        (LoginResult(..))
+import           Logic.Login          (MistakeIn(..))
 --Other-------------------------------------------------------------------------
 import qualified Utils                (removeClass)
 import qualified Data.Int      as Int (Int64)
@@ -25,14 +26,14 @@ import           Control.Monad        (void)
 -- графически уведомляет пользователя
 -- какие действия следует предпринять для
 -- успешного входа.
-handleLogin :: Window -> UI()
-handleLogin window = do
+--handleLogin :: Window -> UI()
+handleLogin sock window = do
   invalidInpBox <- getElemById window "invalid-input-text"
   inpEmail      <- getElemById window "inp-email"
   inpPassw      <- getElemById window "inp-passw"
   let onFocusRemoveErrClass = onFocusRemoveErrClass' invalidInpBox
       showErrText           = showErrText' invalidInpBox
-  loginResult <- Login.login inpEmail inpPassw
+  loginResult <- Login.login sock inpEmail inpPassw
   mapM_ onFocusRemoveErrClass [ inpEmail, inpPassw ]
   case loginResult of
     CorrectPassword    -> return () -- TODO: Переход к основному окну.

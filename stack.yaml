@@ -4,4 +4,5 @@ packages:
 - '.'
 extra-deps:
 - webkit-0.14.2.1
+- syb-with-class-0.6.1.7
 resolver: lts-9.0

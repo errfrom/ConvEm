@@ -1,5 +1,4 @@
-module Utils
-  ( removeClass, getElemType, checkEmail ) where
+module Utils where
 
 import           Text.Printf                                   (printf)
 import           Graphics.UI.Threepenny.Core
@@ -7,6 +6,9 @@ import           Graphics.UI.Threepenny.Core
 --import           Foreign.JavaScript                            (JSObject(..))
 import qualified Graphics.UI.Threepenny.Core as UIJS (runFunction, callFunction
                                                      ,ffi)
+import           Data.ByteString                     (ByteString(..))
+import           Sugar.GenFlagAssociated             (genFlagAssocInstance)
+
 
 -- | Удаляет определенный класс у элемента
 removeClass :: Element -> String -> UI()
@@ -29,10 +31,13 @@ checkEmail email
  where afterEmailSymbol email = (tail . snd . flip break email) (== '@')
        isBlank value          = length value == 0
 
-{-
-getChildren :: Element -> UI [Element]
-getChildren element =
-  let jsFun = UIJS.ffi "$(%1).children()" element
-  in do
-    jsObjects <- UIJS.callFunction jsFun
-    return (map UIInternal.fromJSObject jsObjects) -}
+--------------------------------------------------------------------------------
+data A = A | B | C
+
+$(genFlagAssocInstance "A")
+
+type Flag = String
+
+class FlagAssociated t where
+  toFlag  :: t -> Flag
+  toField :: Flag -> t

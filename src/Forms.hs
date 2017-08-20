@@ -5,13 +5,13 @@ module Forms where
 -- Связывает GUI и Logic.
 --------------------------------------------------------------------------------
 
-import           Server.General
 import           Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events
 
 import           GUI.General
 import qualified GUI.Login   as GUILogin
+import           Server.General
 
 data Stage =
   Auth     -- Авторизации

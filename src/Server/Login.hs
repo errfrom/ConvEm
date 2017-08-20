@@ -14,7 +14,7 @@ import           Logic.General                      (LoginResult(..), Email
 import qualified Data.ByteString           as BS    (singleton, split)
 import           Data.ByteString                    (ByteString(..))
 import           Data.Word8
-
+import           Utils                              (FlagAssociated(..))
 
 handleUser :: Sock.Socket -> IO ByteString
 handleUser conn = do
@@ -25,10 +25,7 @@ handleUser conn = do
   let res = case mPasswHash of
               Nothing -> NonexistentAccount
               Just ph -> validatePassword ph passw
-  return (case res of
-            NonexistentAccount -> "1"
-            IncorrectPassword  -> "2"
-            CorrectPassword    -> "3")
+  return (toFlag res)
   where validatePassword ph passw
          |Crypt.validatePassword ph passw == True = CorrectPassword
          |otherwise = IncorrectPassword

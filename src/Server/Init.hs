@@ -34,6 +34,8 @@ handleConn :: Sock.Socket -> Sock.Socket -> Sock.SockAddr -> IO ()
 handleConn sock conn addr = do
   flag <- recv conn 1
   case flag of
-    "1" -> handleUser conn >>= send conn >> return ()
-    "0" -> Sock.close conn >>  Sock.close sock
+    auth -> handleUser conn >>= send conn >> return ()
+    none -> Sock.close conn >>  Sock.close sock
     _   -> error "Undefined flag."
+    where auth = "1"
+          none = "0"

@@ -16,6 +16,7 @@ import qualified Data.ByteString           as BS     (singleton, append)
 import           Data.ByteString                     (ByteString(..))
 import           Logic.General                       (UserData(..), LoginResult(..))
 import           Data.Word8
+import           Utils                               (FlagAssociated(..))
 
 
 data SocketType =
@@ -28,7 +29,7 @@ initSocket :: SocketType -> IO Sock.Socket
 initSocket sockType =
   let tcpPrtcl  = 6
       localhost = Sock.tupleToHostAddress (127, 0, 0, 1) -- NOTE: Временное решение
-      portNum   = 3500 -- TODO: Дополнительная проверка доступности номера порта.
+      portNum   = 50000 -- TODO: Дополнительная проверка доступности номера порта.
       maxQueue  = 80 -- Сколько может находится соединений в очереди.
                      -- Предполагается, что операции происходят достаточно
                      -- быстро, т.к. делегируются другим потокам.
@@ -37,6 +38,9 @@ initSocket sockType =
   in case sockType of
        ServerSocket -> do
          sock <- socket'
+         if (Sock.isSupportedSocketOption Sock.ReuseAddr)
+           then Sock.setSocketOption sock Sock.ReuseAddr 1
+           else return ()
          Sock.bind sock sockAddr
          Sock.listen sock maxQueue
          return sock
@@ -52,8 +56,4 @@ receive sock LoginData{..} = do
   let data_ = foldl BS.append "" [ lEmail, BS.singleton _space, lPassword ]
   SockBS.send sock data_
   flag <- SockBS.recv sock 1
-  let res = case flag of
-              "1" -> NonexistentAccount
-              "2" -> IncorrectPassword
-              "3" -> CorrectPassword
-  return res
+  return (toField flag :: LoginResult)

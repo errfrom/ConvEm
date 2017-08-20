@@ -20,6 +20,8 @@ body
 
 input
 {
+  -webkit-transition : border-bottom-color 0.5s;
+
   width       : 260px;
   height      : 40px;
 

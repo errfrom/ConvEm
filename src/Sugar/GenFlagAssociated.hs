@@ -1,9 +1,12 @@
 module Sugar.GenFlagAssociated
-  ( genFlagAssocInstance ) where
+  ( deriveFlagAssociated ) where
+
+import qualified Data.ByteString as BS (singleton)
+import           Data.ByteString       (ByteString(..))
+import           Data.Word             (Word8)
 
 import qualified Language.Haskell.TH as TH
 import           Data.Generics.SYB.WithClass.Derive (Constructor, typeInfo)
-import qualified GHC.Classes
 
 type Flag  = String
 type TupCF = (Flag, Constructor)
@@ -27,8 +30,10 @@ funSimple name tupCFs funType =
 
         buildClauses [] _ = []
         buildClauses ((flag, (constrName, _, _, _)):xs) ToFlag =
-          let clause = TH.Clause (singleton  $ TH.ConP constrName [])
-                                 (TH.NormalB $ TH.LitE (TH.StringL flag))
+          let pack'  = TH.mkName "Data.ByteString.Char8.pack"
+              body   = TH.AppE (TH.VarE pack') (TH.LitE $ TH.StringL flag)
+              clause = TH.Clause (singleton  $ TH.ConP constrName [])
+                                 (TH.NormalB body)
                                  empty
           in clause : (buildClauses xs ToFlag)
         buildClauses tupCFs ToField =
@@ -38,22 +43,24 @@ funSimple name tupCFs funType =
                                                (Just $ TH.LitE (TH.StringL x))
               gRes  x = TH.ConE x
               clause  = TH.Clause (singleton $ TH.VarP parName)
-                                  (TH.GuardedB [ (guard fl, gRes cName) |
-                                                 (fl, (cName, _, _, _)) <- tupCFs] )
+                                  (TH.GuardedB [ (guard fl, gRes cName)
+                                               | (fl, (cName, _, _, _)) <- tupCFs] )
                                   empty
           in singleton clause
 
 -- Вовзвращает список конструкторов типа.
+-- Отсеивает конструкторы, имеющие поля.
 getConstructors :: String -> TH.Q [Constructor]
 getConstructors typeName = do
   (Just tn)        <- TH.lookupTypeName typeName
   (TH.TyConI tDec) <- TH.reify tn
   (_, _, constrs)  <- typeInfo tDec
-  return constrs
+  return (onlyConstrsNoFields constrs)
+  where onlyConstrsNoFields = filter $ \(_, numFields, _, _) -> numFields == 0
 
 -- Генерирует экземпляр класса FlagAssociated.
-genFlagAssocInstance :: String -> TH.DecsQ
-genFlagAssocInstance typeName =
+deriveFlagAssociated :: String -> TH.DecsQ
+deriveFlagAssociated typeName =
   let clName = TH.mkName "FlagAssociated"
   in do
     decls <- funcsDef typeName

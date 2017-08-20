@@ -1,11 +1,13 @@
-{-# LANGUAGE TemplateHaskell #-}
+module Utils
+  ( FlagAssociated(..)
+  , checkEmail
+  , removeClass, getElemType ) where
 
-module Utils where
-
-import           Text.Printf                 (printf)
 import           Graphics.UI.Threepenny.Core
+import           Text.Printf                  (printf)
+import           Data.ByteString              (ByteString(..))
 
--- | Удаляет определенный класс у элемента
+-- | Удаляет определенный css-класс у элемента
 removeClass :: Element -> String -> UI()
 removeClass element class' =
   let jsPattern = printf ".removeClass('%s')" class'
@@ -16,6 +18,9 @@ getElemType :: Element -> UI String
 getElemType el = callFunction (ffi "$(%1).attr('type')" el) >>= return
 
 -- | Проверяет, может ли существовать подобный email.
+-- Чем тщательнее выполняется проверка, тем меньше работы
+-- предстоит сделать серверу для выявления несуществующих
+-- E-mail адресов.
 checkEmail email
  |isBlank email          = False
  |(not . elem '@') email = False -- Нет '@' в строке
@@ -26,8 +31,16 @@ checkEmail email
  where afterEmailSymbol email = (tail . snd . flip break email) (== '@')
        isBlank value          = length value == 0
 
-type Flag = String
+type Flag = ByteString
 
+-- Экземпляры этого класса ассоциируются с определенными флагами,
+-- передающимися к серверу и обратно. Использование функций
+-- toFlag и toField на порядок безопасней из-за подразумевающейся
+-- синхронизации. Какие бы значения флагов не были сгенерированы
+-- для экземпляра, результат всегда будет положительный.
+-- Дабы избавиться от написания шаблонного кода, в модуле
+-- Sugar/GenFlagAssociated.hs описана логика генератора экземпляров
+-- класса.
 class FlagAssociated t where
   toFlag  :: t -> Flag
   toField :: Flag -> t

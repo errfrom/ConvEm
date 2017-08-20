@@ -22,13 +22,13 @@ login :: Socket -> Element -> Element -> UI LoginResult
 login sock inpEmail inpPassw = do
   email    <- getValue inpEmail
   password <- getValue inpPassw
-  res <- liftIO $ worker email password
+  res      <- liftIO $ worker email password
   return res
   where getValue = get value
         worker email password =
           case (checkReceivedValues email password) of
             Just mistakeIn -> return (InvalidValues mistakeIn)
-            Nothing        -> receive sock $ LoginData (pack email) (pack password)
+            Nothing        -> receive sock (LoginData (pack email) (pack password))
 
 -- | Проверяет, могут ли существовать
 -- введенные пользователем значения.

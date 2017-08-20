@@ -50,8 +50,10 @@ instance Concretized ButtonKind where
 instance Concretized InputKind where
   add (InpSimple text)   = handleFilled =<< Elems.input # set (attr "placeholder") text
                                                         # set (attr "type") "simple"
+                                                        # set (attr "maxlength") "80"
   add (InpPassword text) = handleFilled =<< Elems.input # set (attr "placeholder") text
                                                         # set (attr "type") "password"
+                                                        # set (attr "maxlength") "80"
 
 instance Concretized LabelKind where
   add (LblHeader text)  = Elems.h1  # setText text

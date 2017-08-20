@@ -1,8 +1,12 @@
-module Logic.General
-  (Email, HashedPassword
-  ,MistakeIn(..), UserData(..), LoginResult(..)) where
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-import Data.ByteString (ByteString(..))
+module Logic.General where
+
+import           Data.ByteString         (ByteString(..))
+import           Data.ByteString.Char8   (pack)
+import           Utils                   (FlagAssociated(..))
+import           Sugar.GenFlagAssociated (deriveFlagAssociated)
 
 type Email          = ByteString
 type HashedPassword = ByteString
@@ -20,12 +24,12 @@ data MistakeIn =
 -- | Описывает результат запроса
 -- пользователя на вход.
 data LoginResult =
-   InvalidValues MistakeIn -- Поля входа заполнены не правильно. (см. checkReceivedValues)
+   InvalidValues MistakeIn
   |CorrectPassword
   |IncorrectPassword
   |NonexistentAccount
-  |BlockedAccount -- TODO: Продумать логику. (Добавить поле в базу?)
-  deriving (Show)
+  |BlockedAccount
+$(deriveFlagAssociated "LoginResult")
 
 data UserData =
   LoginData { lEmail    :: Email

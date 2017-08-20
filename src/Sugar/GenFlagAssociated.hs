@@ -3,6 +3,7 @@ module Sugar.GenFlagAssociated
 
 import qualified Language.Haskell.TH as TH
 import           Data.Generics.SYB.WithClass.Derive (Constructor, typeInfo)
+import qualified GHC.Classes
 
 type Flag  = String
 type TupCF = (Flag, Constructor)
@@ -26,14 +27,17 @@ funSimple name tupCFs funType =
 
         buildClauses [] _ = []
         buildClauses ((flag, (constrName, _, _, _)):xs) ToFlag =
-          let clause = TH.Clause (singleton  $ TH.VarP constrName)
+          let clause = TH.Clause (singleton  $ TH.ConP constrName [])
                                  (TH.NormalB $ TH.LitE (TH.StringL flag))
                                  empty
           in clause : (buildClauses xs ToFlag)
         buildClauses tupCFs ToField =
-          let guard x = TH.NormalG $ TH.LitE (TH.StringL x)
-              gRes  x = TH.VarE x
-              clause  = TH.Clause (singleton $ TH.VarP (TH.mkName "fl"))
+          let parName = TH.mkName "fl"
+              guard x = TH.NormalG $ TH.InfixE (Just $ TH.VarE parName)
+                                               (TH.VarE $ (TH.mkName "=="))
+                                               (Just $ TH.LitE (TH.StringL x))
+              gRes  x = TH.ConE x
+              clause  = TH.Clause (singleton $ TH.VarP parName)
                                   (TH.GuardedB [ (guard fl, gRes cName) |
                                                  (fl, (cName, _, _, _)) <- tupCFs] )
                                   empty
@@ -48,15 +52,6 @@ getConstructors typeName = do
   return constrs
 
 -- Генерирует экземпляр класса FlagAssociated.
--- FIXME: Для типа данных 'data A = A | B | C'
---   сгенерировал код 'instance FlagAssociated A where
---                       toFlag Utils.A = "1"
---                       toFlag Utils.B = "2"
---                       toFlag Utils.C = "3"
---                       toField fl | "1" = Utils.A
---                                  | "2" = Utils.B
---                                  | "3" = Utils.C'
---  следовательно ошибка кроется в генераторе функции 'toField'.
 genFlagAssocInstance :: String -> TH.DecsQ
 genFlagAssocInstance typeName =
   let clName = TH.mkName "FlagAssociated"

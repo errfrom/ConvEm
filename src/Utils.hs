@@ -1,24 +1,19 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Utils where
 
-import           Text.Printf                                   (printf)
+import           Text.Printf                 (printf)
 import           Graphics.UI.Threepenny.Core
---import qualified Graphics.UI.Threepenny.Internal as UIInternal (fromJSObject)
---import           Foreign.JavaScript                            (JSObject(..))
-import qualified Graphics.UI.Threepenny.Core as UIJS (runFunction, callFunction
-                                                     ,ffi)
-import           Data.ByteString                     (ByteString(..))
-import           Sugar.GenFlagAssociated             (genFlagAssocInstance)
-
 
 -- | Удаляет определенный класс у элемента
 removeClass :: Element -> String -> UI()
 removeClass element class' =
   let jsPattern = printf ".removeClass('%s')" class'
-      jsFun     = UIJS.ffi ("$(%1)" ++ jsPattern) element
-  in UIJS.runFunction jsFun
+      jsFun     = ffi ("$(%1)" ++ jsPattern) element
+  in runFunction jsFun
 
 getElemType :: Element -> UI String
-getElemType el = UIJS.callFunction (UIJS.ffi "$(%1).attr('type')" el) >>= return
+getElemType el = callFunction (ffi "$(%1).attr('type')" el) >>= return
 
 -- | Проверяет, может ли существовать подобный email.
 checkEmail email
@@ -30,11 +25,6 @@ checkEmail email
  |otherwise         = True
  where afterEmailSymbol email = (tail . snd . flip break email) (== '@')
        isBlank value          = length value == 0
-
---------------------------------------------------------------------------------
-data A = A | B | C
-
-$(genFlagAssocInstance "A")
 
 type Flag = String
 

@@ -9,7 +9,6 @@ module Types.Data
 import Types.General         (HashedPassword)
 import Data.ByteString.Char8 (ByteString(..))
 
-
 data UserData =
-  LoginData { lEmail    :: ByteString
+  AuthData  { lEmail    :: ByteString
             , lPassword :: HashedPassword }

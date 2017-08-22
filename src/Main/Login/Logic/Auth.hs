@@ -1,11 +1,12 @@
 module Main.Login.Logic.Auth
   ( auth ) where
 
-import Graphics.UI.Threepenny.Core (get, value)
-import Network.Socket              (Socket)
-import Data.ByteString.Char8       (pack)
-import Main.Login.Logic.General    (checkEmail)
--- TODO
+import Graphics.UI.Threepenny.Core
+import Network.Socket           (Socket)
+import Data.ByteString.Char8    (pack)
+import Main.Login.Logic.General (checkEmail, askServerResp)
+import Types.Results            (MistakeIn(..), AuthResult(..))
+import Types.Data               (UserData(..))
 
 --------------------------------------------------------------------------------
 -- Backend часть процесса авторизации на стороне клиента.
@@ -15,7 +16,7 @@ import Main.Login.Logic.General    (checkEmail)
 -- | Реализация Backend-части авторизации с
 -- результатом, значение которого впоследствие
 -- передается Frontend-логике.
-auth :: Socket -> Element -> Element -> UI LoginResult
+auth :: Socket -> Element -> Element -> UI AuthResult
 auth sock inpEmail inpPassw = do
   email <- getValue inpEmail
   passw <- getValue inpPassw
@@ -25,7 +26,9 @@ auth sock inpEmail inpPassw = do
         worker email passw =
           case (checkReceivedValues email passw) of
             Just mistakeIn -> return (InvalidValues mistakeIn)
-            Nothing        -> receive sock (LoginData (pack email) (pack passw))
+            Nothing        ->
+              let loginData = AuthData (pack email) (pack passw)
+              in  (askServerResp sock loginData :: IO AuthResult)
 
 -- | Проверяет, могут ли существовать
 -- введенные пользователем значения.

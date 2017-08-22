@@ -1,4 +1,4 @@
-module Forms where
+module Main.Login.GUI.Forms where
 
 --------------------------------------------------------------------------------
 -- Содержит все GUI формы, а также осуществляет перемещение между оными.
@@ -9,16 +9,11 @@ module Forms where
 import Graphics.UI.Threepenny.Core               hiding (row)
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events
-import           GUI.General
-import qualified GUI.Login   as GUILogin
-import           Server.General
-
-data Stage =
-  Auth
- |Reg
- |Sync
- |Recovery
- |Main
+import Main.Login.GUI.General
+import Main.Login.GUI.Auth  (handleAuth)
+import Server.General
+import Types.General        (Stage(..))
+import Types.Server         (SocketType(..))
 
 -- | Форма авторизации.
 loginForm :: UI Element
@@ -31,7 +26,7 @@ loginForm = do
     , wrap [ add (InpSimple "E-mail"  ) `as` "inp-email" ]
     , wrap [ add (InpPassword "Пароль") `as` "inp-passw" ]
     , add LblInvalid
-    , wrap [ add (BtnImportant "Вперед") `bind` (GUILogin.handleLogin sock window)
+    , wrap [ add (BtnImportant "Вперед") `bind` (handleAuth sock)
            , additional [ add (BtnLink "Регистрация"   ) `switch` Reg
                         , add (BtnLink "Забыли пароль?") `switch` Recovery ]]]
 
@@ -73,7 +68,7 @@ switch el' stage = do
     [center]  <- getElementsByTagName   window "center"
     delete mainDiv
     delete center -- FIXME: Not the best way to clear body.
-    getBody window #+ [ (getForm stage) window ]
+    getBody window #+ [ getForm stage ]
   return el
   where getForm stage =
           case stage of

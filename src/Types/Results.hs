@@ -2,7 +2,8 @@
 
 module Types.Results
   ( MistakeIn(..)
-  , AuthResult, RecoveryResult ) where
+  , AuthResult(..), RecoveryResult
+  , Results(..) ) where
 
 --------------------------------------------------------------------------------
 -- Типы данных, описывающие всевозможные результаты
@@ -13,6 +14,9 @@ import qualified Data.ByteString.Char8 (pack)
 import Types.General                   (FlagAssociated(..))
 import Templates.GenFlagAssociated     (deriveFlagAssociated)
 
+class Results t where
+instance Results AuthResult
+instance Results RecoveryResult
 
 -- | Указывает, в каком поле ввода совершена ошибка.
 -- Тем самым, дает дополнительную информацию Frontend-логике.

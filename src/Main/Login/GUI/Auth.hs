@@ -1,46 +1,42 @@
-module Main.Login.GUI.Auth where
+module Main.Login.GUI.Auth
+  (handleAuth) where
 
 --------------------------------------------------------------------------------
 -- Обрабатывает события авторизации.
 -- Отображает результаты этих событий графически.
 --------------------------------------------------------------------------------
 
---Threepenny--------------------------------------------------------------------
-import           Graphics.UI.Threepenny.Core
-import qualified Graphics.UI.Threepenny.Elements as Elems
+import Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny.Events   as Events
---GUI---------------------------------------------------------------------------
-import GUI.General (getElemById)
---Logic-------------------------------------------------------------------------
-import qualified Logic.Login as Login (login)
-import           Logic.General        (LoginResult(..))
-import           Logic.Login          (MistakeIn(..))
---Other-------------------------------------------------------------------------
-import qualified Utils                (removeClass)
-import qualified Data.Int      as Int (Int64)
-import qualified Data.Maybe    as M   (fromJust)
-import           Control.Monad        (void)
---------------------------------------------------------------------------------
+import qualified Data.Int                        as Int (Int64)
+import qualified Data.Maybe                      as M   (fromJust)
+import Network.Socket                                   (Socket)
+import Control.Monad                                    (void)
+import qualified Utils                                  (getElemById
+                                                        ,removeClass)
+import Main.Login.Logic.Auth                            (auth)
+import Types.Results                                    (MistakeIn(..)
+                                                        ,AuthResult(..))
+
 
 -- | При неудачной авторизации,
 -- графически уведомляет пользователя
 -- какие действия следует предпринять для
 -- успешного входа.
-handleLogin :: UI()
-handleLogin sock = do
-  window        <- askWindow
-  invalidInpBox <- getElemById window "invalid-input-text"
-  inpEmail      <- getElemById window "inp-email"
-  inpPassw      <- getElemById window "inp-passw"
+handleAuth :: Socket -> UI()
+handleAuth sock = do
+  invalidInpBox <- Utils.getElemById "invalid-input-text"
+  inpEmail      <- Utils.getElemById "inp-email"
+  inpPassw      <- Utils.getElemById "inp-passw"
   let onFocusRemoveErrClass = onFocusRemoveErrClass' invalidInpBox
       showErrText           = showErrText' invalidInpBox
-  loginResult <- Login.login sock inpEmail inpPassw
+  loginResult <- auth sock inpEmail inpPassw
   mapM_ onFocusRemoveErrClass [ inpEmail, inpPassw ]
   case loginResult of
-    CorrectPassword    -> return () -- TODO: Переход к основному окну.
-    IncorrectPassword  -> void $ showErrText "Введенный пароль неверен."
-    NonexistentAccount -> void $ showErrText "Аккаунта с таким Email не существует."
-    BlockedAccount     -> void $ showErrText "Аккаунт заблокирован."
+    CorrectPassword     -> return () -- TODO: Переход к основному окну.
+    IncorrectPassword   -> void $ showErrText "Введенный пароль неверен."
+    ANonexistentAccount -> void $ showErrText "Аккаунта с таким Email не существует."
+    BlockedAccount      -> void $ showErrText "Аккаунт заблокирован."
     InvalidValues mistakeIn -> do
       case mistakeIn of
         InEmailField -> do

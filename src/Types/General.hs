@@ -1,7 +1,7 @@
 module Types.General
   ( FlagAssociated(..)
   , Stage(..)
-  , HashedPasswor ) where
+  , HashedPassword ) where
 
 --------------------------------------------------------------------------------
 -- Набор различной дополнительной/общей информации,

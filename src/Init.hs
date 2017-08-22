@@ -8,9 +8,9 @@ module Init
 
 --Control-----------------------------------------------------------------------
 import qualified Control.Concurrent as Conc (forkIO, killThread)
-import           Control.Monad              (void)
+import Control.Monad                        (void)
 import qualified Control.Exception  as Exc  (SomeException(..))
-import           Control.Exception          (catch)
+import Control.Exception                    (catch)
 --System------------------------------------------------------------------------
 import qualified System.Exit            as Exit    (ExitCode(..), exitWith)
 import qualified System.Process         as Process (system
@@ -41,8 +41,8 @@ import qualified Graphics.UI.Gtk.Abstract.Container       as Container
 import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
   (WebView(..), webViewNew, webViewLoadUri)
 --My----------------------------------------------------------------------------
-import qualified Forms
-import qualified Server.Init as Server (initServer)
+import qualified Main.Login.GUI.Forms as Forms
+import qualified Server.General       as Server (initServer)
 --------------------------------------------------------------------------------
 
 -- | Основная функция, запускающая
@@ -70,7 +70,7 @@ startLocalServer portId = do
           return window # UI.set UI.title "DDChat"
           Elems.addStyleSheet window "fonts.css"
           Elems.addStyleSheet window "login.css"
-          loginForm <- Forms.loginForm window
+          loginForm <- Forms.loginForm 
           UI.getBody window #+ [UI.element loginForm]
 
 -- | Инициализирует GTK GUI,

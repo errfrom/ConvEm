@@ -16,7 +16,7 @@ import qualified Data.ByteString           as BS     (singleton, append)
 import           Data.ByteString                     (ByteString(..))
 import           Logic.General                       (UserData(..), LoginResult(..))
 import           Data.Word8
-import           Utils                               (FlagAssociated(..))
+import           Types.General                       (FlagAssociated(..))
 
 
 data SocketType =
@@ -56,4 +56,4 @@ receive sock LoginData{..} = do
   let data_ = foldl BS.append "" [ lEmail, BS.singleton _space, lPassword ]
   SockBS.send sock data_
   flag <- SockBS.recv sock 1
-  return (toField flag :: LoginResult)
+  return (toConstr flag :: LoginResult)

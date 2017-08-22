@@ -1,24 +1,33 @@
-module Sugar.GenFlagAssociated
+module Templates.GenFlagAssociated
   ( deriveFlagAssociated ) where
 
-import qualified Data.ByteString as BS (singleton)
-import           Data.ByteString       (ByteString(..))
-import           Data.Word             (Word8)
+--------------------------------------------------------------------------------
+-- Автоматически создает экземпляры класса FlagAssociated.
+-- Суть работы заключается в нахождении всех конструкторов переданного типа
+-- без полей, создании функции где каждому инкрементно возрастающему числовому
+-- значению сопоставляется один из конструкторов переданного типа, а также
+-- функции производящую ту же самую работу, но в обратном порядке: каждому
+-- конструктору типа сопоставляется определенное число.
+-- Таким образом и формируются функции toFlag и toConstr.
+--------------------------------------------------------------------------------
 
 import qualified Language.Haskell.TH as TH
-import           Data.Generics.SYB.WithClass.Derive (Constructor, typeInfo)
+import Data.Generics.SYB.WithClass.Derive (Constructor, typeInfo)
 
-type Flag  = String
-type TupCF = (Flag, Constructor)
+
+type Flag     = String
+type TypeName = String
+type FunName  = String
+type TupCF    = (Flag, Constructor)
 
 data SimpleFunType =
    ToFlag
-  |ToField
+  |ToConstr
 
 -- На основе переданного конструктора SimpleFunType
--- генерирует либо функцию toFlag, либо toField
+-- генерирует либо функцию toFlag, либо toConstr
 -- класса FlagAssociated.
-funSimple :: String -> [ TupCF ] -> SimpleFunType -> TH.DecQ
+funSimple :: FunName -> [ TupCF ] -> SimpleFunType -> TH.DecQ
 funSimple name tupCFs funType =
   let clauses = buildClauses tupCFs funType
   in TH.funD (TH.mkName name) (mapReturn clauses)
@@ -36,7 +45,7 @@ funSimple name tupCFs funType =
                                  (TH.NormalB body)
                                  empty
           in clause : (buildClauses xs ToFlag)
-        buildClauses tupCFs ToField =
+        buildClauses tupCFs ToConstr =
           let parName = TH.mkName "fl"
               guard x = TH.NormalG $ TH.InfixE (Just $ TH.VarE parName)
                                                (TH.VarE $ (TH.mkName "=="))
@@ -50,7 +59,7 @@ funSimple name tupCFs funType =
 
 -- Вовзвращает список конструкторов типа.
 -- Отсеивает конструкторы, имеющие поля.
-getConstructors :: String -> TH.Q [Constructor]
+getConstructors :: TypeName -> TH.Q [Constructor]
 getConstructors typeName = do
   (Just tn)        <- TH.lookupTypeName typeName
   (TH.TyConI tDec) <- TH.reify tn
@@ -59,19 +68,21 @@ getConstructors typeName = do
   where onlyConstrsNoFields = filter $ \(_, numFields, _, _) -> numFields == 0
 
 -- Генерирует экземпляр класса FlagAssociated.
-deriveFlagAssociated :: String -> TH.DecsQ
-deriveFlagAssociated typeName =
+deriveFlagAssociated :: [TypeName] -> TH.DecsQ
+deriveFlagAssociated typeNames =
   let clName = TH.mkName "FlagAssociated"
-  in do
-    decls <- funcsDef typeName
-    res   <- TH.instanceD (TH.cxt [])
-                          (TH.appT (TH.conT clName) $ (TH.conT . TH.mkName) typeName)
-                          (decls)
-    return [res]
-  where funcsDef typeName = do
+  in mapM (worker clName) typeNames
+  where worker clName typeName  = do
+          decls <- funcsDef typeName
+          res   <- TH.instanceD (TH.cxt [])
+                                (TH.appT (TH.conT clName) $ (TH.conT . TH.mkName) typeName)
+                                (decls)
+          return res
+
+        funcsDef typeName = do
           constrs <- getConstructors typeName
           let tupCFs   = enumerate constrs
-              toFlag'  = funSimple "toFlag"  tupCFs ToFlag
-              toField' = funSimple "toField" tupCFs ToField
+              toFlag'  = funSimple "toFlag"   tupCFs ToFlag
+              toField' = funSimple "toConstr" tupCFs ToConstr
           return [ toFlag', toField' ]
         enumerate constrs = [ (show fl, c) | (fl, c) <- (zip [1..] constrs) ]

@@ -1,46 +1,40 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Utils
-  ( FlagAssociated(..)
-  , checkEmail
-  , removeClass, getElemType ) where
+  ( removeClass, hasClass, getElemById, getElemType ) where
 
-import           Graphics.UI.Threepenny.Core
-import           Text.Printf                  (printf)
-import           Data.ByteString              (ByteString(..))
+--------------------------------------------------------------------------------
+-- Различные частоиспользуемые функции.
+--------------------------------------------------------------------------------
 
--- | Удаляет определенный css-класс у элемента
+import Graphics.UI.Threepenny.Core
+import Text.Printf (printf)
+import qualified Data.Maybe as M (fromJust)
+
+
+-- | Удаляет определенный css-класс у элемента.
 removeClass :: Element -> String -> UI()
 removeClass element class' =
   let jsPattern = printf ".removeClass('%s')" class'
       jsFun     = ffi ("$(%1)" ++ jsPattern) element
   in runFunction jsFun
 
+-- | Возвращает css-тип элемента.
 getElemType :: Element -> UI String
 getElemType el = callFunction (ffi "$(%1).attr('type')" el) >>= return
 
--- | Проверяет, может ли существовать подобный email.
--- Чем тщательнее выполняется проверка, тем меньше работы
--- предстоит сделать серверу для выявления несуществующих
--- E-mail адресов.
-checkEmail email
- |isBlank email          = False
- |(not . elem '@') email = False -- Нет '@' в строке
- |(length . flip filter email) (== '@') /= 1 = False -- Несколько '@'
- |(not . elem '.' . afterEmailSymbol) email  = False -- Нет '.' после '@'
- |last email == '.' = False -- Заканчивается на '.'
- |otherwise         = True
- where afterEmailSymbol email = (tail . snd . flip break email) (== '@')
-       isBlank value          = length value == 0
+-- | Возвращает элемент по значению css-идентификатора.
+getElemById :: String -> UI Element
+getElemById id' = do
+  window <- askWindow
+  mElem  <- getElementById window id'
+  return (M.fromJust mElem)
 
-type Flag = ByteString
-
--- Экземпляры этого класса ассоциируются с определенными флагами,
--- передающимися к серверу и обратно. Использование функций
--- toFlag и toField на порядок безопасней из-за подразумевающейся
--- синхронизации. Какие бы значения флагов не были сгенерированы
--- для экземпляра, результат всегда будет положительный.
--- Дабы избавиться от написания шаблонного кода, в модуле
--- Sugar/GenFlagAssociated.hs описана логика генератора экземпляров
--- класса.
-class FlagAssociated t where
-  toFlag  :: t -> Flag
-  toField :: Flag -> t
+-- | Указывает, имеет ли елемент тот или иной css-класс.
+hasClass :: Element -> String -> UI Bool
+hasClass el class' =
+  let jsPattern = printf ".hasClass('%s')" class'
+  in callFunction (flip ffi el $ "$(%1)" ++ jsPattern) >>= (return . jsBool)
+  where jsBool val
+         | val == "true" = True
+         | otherwise     = False

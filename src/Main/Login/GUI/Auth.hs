@@ -1,4 +1,4 @@
-module GUI.Login where
+module Main.Login.GUI.Auth where
 
 --------------------------------------------------------------------------------
 -- Обрабатывает события авторизации.
@@ -26,8 +26,9 @@ import           Control.Monad        (void)
 -- графически уведомляет пользователя
 -- какие действия следует предпринять для
 -- успешного входа.
---handleLogin :: Window -> UI()
-handleLogin sock window = do
+handleLogin :: UI()
+handleLogin sock = do
+  window        <- askWindow
   invalidInpBox <- getElemById window "invalid-input-text"
   inpEmail      <- getElemById window "inp-email"
   inpPassw      <- getElemById window "inp-passw"

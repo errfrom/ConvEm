@@ -51,6 +51,7 @@ input:focus
 
 input::-webkit-input-placeholder
 {
+
   -webkit-transition : opacity 0.5s;
 
   opacity    : 1;
@@ -77,7 +78,13 @@ input.with-error
 /* Поле ввода меньшей длины. Помещается с таким же полем в одну строку. */
 input.short
 {
-  width : 130px;
+  width : 122px;
+}
+
+input.short:focus::-webkit-input-placeholder
+{
+  text-align : left;
+  opacity    : 0;
 }
 
 /** BUTTON ********************************************************************/
@@ -133,7 +140,14 @@ button.btn-important:active
 
 div
 {
-  padding-top : 10px;
+  padding-top  : 10px;
+}
+
+div.row
+{
+  background-color : red;
+  width            : 260px;
+  height           : 40px;
 }
 
 .additional-btns
@@ -165,6 +179,11 @@ div
 {
   top    : 0%;
   height : 240px;
+}
+
+#reg-form.main-div
+{
+  top : 3%;
 }
 
 /** TEXT BOXES ****************************************************************/

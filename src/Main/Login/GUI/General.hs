@@ -1,7 +1,6 @@
-module GUI.General
+module Main.Login.GUI.General
   ( Concretized(..), ButtonKind(..), InputKind(..), LabelKind(..)
-  , bind, as, build, wrap, short, additional
-  , getElemById ) where
+  , bind, as, build, row, wrap, short, additional ) where
 
 --------------------------------------------------------------------------------
 -- Содержит часто используемые элементы, а также
@@ -9,14 +8,12 @@ module GUI.General
 -- код, получающийся при написании графических форм.
 --------------------------------------------------------------------------------
 
-import           Graphics.UI.Threepenny.Core
-import           Graphics.UI.Threepenny.Canvas             (textFont)
-import           Reactive.Threepenny                       (Event(..))
+import Graphics.UI.Threepenny.Core               hiding    (row)
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events (click, valueChange)
+import qualified Utils                                     (removeClass
+                                                           ,getElemType)
 
-import qualified Data.Maybe as M (fromJust)
-import qualified Utils           (removeClass, getElemType)
 
 --Attr setters------------------------------------------------------------------
 
@@ -89,6 +86,10 @@ wrap elems = Elems.div #+ elems
 short :: UI Element -> UI Element
 short el = el #. "short"
 
+row :: [UI Element] -> UI Element
+row elems = Elems.div #. "row"
+                      #+ elems
+
 additional :: [UI Element] -> UI Element
 additional btns = Elems.div #+ btns
                             #. "additional-btns"
@@ -127,8 +128,3 @@ handleFilled inp =
                 ++    "return this.context.measureText('" ++ txt ++ "').width; }"
                 ++ "get_text_width();"
           in (callFunction . ffi) js >>= return
-
-getElemById :: Window -> String -> UI Element
-getElemById w id' = do
-  mElem <- getElementById w id'
-  return (M.fromJust mElem)

@@ -13,7 +13,7 @@ import qualified Network.Socket            as Sock   (Socket(..))
 import qualified Network.Socket.ByteString as SockBS (send, recv)
 import qualified Data.ByteString           as BS     (singleton, append)
 import Data.Word8                                    (_space)
-import Types.Data                                    (UserData(..))
+import Types.Data                                    (UserData(..), RecoveryData'(..))
 import Types.Results                                 (Results(..), AuthResult(..))
 import Types.General                                 (FlagAssociated(..))
 import Types.Server                                  (RequestType(..))
@@ -43,5 +43,11 @@ askServerResp sock AuthData{..} = do
   _ <- SockBS.recv sock 1 -- Исскуственная блокировка.
   let data_ = foldl BS.append "" [ lEmail, BS.singleton _space, lPassword ]
   SockBS.send sock data_
+  flag <- SockBS.recv sock 1
+  return (toConstr flag)
+askServerResp sock (RecoveryData (RDEmail email)) = do
+  SockBS.send sock (toFlag Recovery)
+  _ <- SockBS.recv sock 1
+  SockBS.send sock email
   flag <- SockBS.recv sock 1
   return (toConstr flag)

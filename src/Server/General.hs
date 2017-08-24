@@ -13,10 +13,11 @@ module Server.General
 import qualified Network.Socket     as Sock
 import Network.Socket.ByteString            (recv, send)
 import qualified Control.Concurrent as Conc (forkIO)
-import Control.Monad                        (forever)
+import Control.Monad                        (forever, void)
 import Types.Server                         (SocketType(..), RequestType(..))
 import Types.General                        (FlagAssociated(..))
 import Server.Login.Auth                    (handleUser)
+import Server.Login.Recovery                (handleReceiver)
 
 
 -- | Инициализирует сокет в зависимости
@@ -41,6 +42,7 @@ initSocket sockType =
          Sock.listen sock maxQueue
          return sock
        ClientSocket -> do
+         putStrLn "GOT."
          sock <- socket'
          Sock.connect sock sockAddr
          return sock
@@ -62,6 +64,8 @@ handleConn :: Sock.Socket -> Sock.Socket -> Sock.SockAddr -> IO ()
 handleConn sock conn addr = do
   flag <- recv conn 1
   case (toConstr flag :: RequestType) of
-    Auth -> handleUser conn >>= send conn >> return ()
-    Exit -> Sock.close conn >>  Sock.close sock
-    _   -> error "Undefined flag."
+    Auth     -> handleUser conn     >>= answerClient
+    Recovery -> handleReceiver conn >>= answerClient
+    Exit     -> Sock.close conn >>  Sock.close sock
+    _        -> error "Undefined flag."
+  where answerClient res = send conn res >> return ()

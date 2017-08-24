@@ -39,12 +39,9 @@ library
                      , mysql-simple
                      , bcrypt
                      , word8
-                     , monad-coroutine
-                     , th-utilities
                      , template-haskell
                      , syb-with-class
                      , transformers
-                     , smtp-mail
                      , HaskellNet-SSL
   default-language:    Haskell2010
 

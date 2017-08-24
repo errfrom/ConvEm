@@ -2,7 +2,8 @@
 
 body
 {
-  background-color: white;
+  background-color : white;
+  overflow-x       : hidden;
 }
 
 *
@@ -172,7 +173,7 @@ div.row
 #login-form.main-div
 {
   height : 315px;
-  top    : 5%;
+  top    : 8%;
 }
 
 #recovery-form.main-div
@@ -184,6 +185,11 @@ div.row
 #reg-form.main-div
 {
   top : 3%;
+}
+
+#start-form.main-div
+{
+  top : 40%;
 }
 
 /** TEXT BOXES ****************************************************************/
@@ -219,4 +225,35 @@ div.row
   font-size   : 14px;
   font-weight : 400;
   color       : #808080; /* light gray */
+}
+
+/** IMAGES ********************************************************************/
+
+/*
+#textlogo
+{
+  width : 150px;
+  height : auto;
+}*/
+
+img
+{
+  margin : auto;
+}
+
+.hdr-wrapper
+{
+  position : relative;
+  margin : 0 auto;
+  width  : 333px;
+}
+
+.header
+{
+  position : absolute;
+  width : 100%;
+  float : left;
+  top   : 0;
+  left  : 0;
+  background-color : #F0BB67;
 }

@@ -41,7 +41,7 @@ import qualified Graphics.UI.Gtk.Abstract.Container       as Container
 import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
   (WebView(..), webViewNew, webViewLoadUri)
 --My----------------------------------------------------------------------------
-import qualified Main.Login.GUI.Forms as Forms
+import qualified Main.Login.GUI.Forms as Forms  (initForms)
 import qualified Server.General       as Server (initServer)
 --------------------------------------------------------------------------------
 
@@ -70,8 +70,7 @@ startLocalServer portId = do
           return window # UI.set UI.title "DDChat"
           Elems.addStyleSheet window "fonts.css"
           Elems.addStyleSheet window "login.css"
-          loginForm <- Forms.loginForm 
-          UI.getBody window #+ [UI.element loginForm]
+          Forms.initForms
 
 -- | Инициализирует GTK GUI,
 -- выступающий в роли браузера для описанного
@@ -79,8 +78,8 @@ startLocalServer portId = do
 startGtk :: Int -> IO WV.WebView
 startGtk portId =
   let url         = "http://127.0.0.1:" ++ (show portId)
-      minSize     = 500 :: Int
-      defaultSize = 700
+      minSize     = (500, 820) :: (Int, Int)
+      defaultSize = 820
   in do
     improvedInitGUI
     window         <- Win.windowNew
@@ -91,7 +90,7 @@ startGtk portId =
                      , Win.windowDefaultWidth   := defaultSize
                      , Win.windowDefaultHeight  := defaultSize ]
     -- Устанавливаем минимальные значения размеров окна
-    Widget.widgetSetSizeRequest window minSize minSize
+    Widget.widgetSetSizeRequest window (fst minSize) (snd minSize)
     Attrs.set scrolledWindow [ Container.containerChild := webView ]
     WV.webViewLoadUri webView url
     Widget.onDestroy window (safeQuit portId)

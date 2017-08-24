@@ -1,12 +1,13 @@
 module Main.Login.Logic.Auth
   ( auth ) where
 
-import Graphics.UI.Threepenny.Core
-import Network.Socket           (Socket)
-import Data.ByteString.Char8    (pack)
-import Main.Login.Logic.General (checkEmail, askServerResp)
-import Types.Results            (MistakeIn(..), AuthResult(..))
-import Types.Data               (UserData(..))
+import Graphics.UI.Threepenny.Core (UI(..), Element, liftIO)
+import Network.Socket              (Socket)
+import Data.ByteString.Char8       (pack)
+import Main.Login.Logic.General    (checkEmail, askServerResp)
+import Types.Results               (MistakeIn(..), AuthResult(..))
+import Types.Data                  (UserData(..))
+import Utils                       (getValue)
 
 --------------------------------------------------------------------------------
 -- Backend часть процесса авторизации на стороне клиента.
@@ -20,10 +21,9 @@ auth :: Socket -> Element -> Element -> UI AuthResult
 auth sock inpEmail inpPassw = do
   email <- getValue inpEmail
   passw <- getValue inpPassw
-  res   <- liftIO $ worker email passw
+  res   <- liftIO $ worker sock email passw
   return res
-  where getValue = get value
-        worker email passw =
+  where worker sock email passw =
           case (checkReceivedValues email passw) of
             Just mistakeIn -> return (InvalidValues mistakeIn)
             Nothing        ->

@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Utils
-  ( removeClass, hasClass, getElemById, getElemType ) where
+  ( removeClass, hasClass, getElemById, getElemType, getValue ) where
 
 --------------------------------------------------------------------------------
 -- Различные частоиспользуемые функции.
@@ -38,3 +38,5 @@ hasClass el class' =
   where jsBool val
          | val == "true" = True
          | otherwise     = False
+
+getValue = get value

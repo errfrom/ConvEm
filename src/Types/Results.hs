@@ -2,7 +2,7 @@
 
 module Types.Results
   ( MistakeIn(..)
-  , AuthResult(..), RecoveryResult
+  , AuthResult(..), RecoveryResult(..)
   , Results(..) ) where
 
 --------------------------------------------------------------------------------
@@ -39,6 +39,9 @@ data RecoveryResult =
  |RNonexistentAccount
  |RecMailSent
  |SendingDenied
+ |BadKey
+ |WrongKey
+ |RightKey
 
 $(deriveFlagAssociated [ "AuthResult"
                        , "RecoveryResult" ])

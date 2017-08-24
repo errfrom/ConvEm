@@ -1,6 +1,6 @@
 module Types.General
   ( FlagAssociated(..)
-  , Stage(..)
+  , RecStage(..), Stage(..)
   , HashedPassword ) where
 
 --------------------------------------------------------------------------------
@@ -26,9 +26,13 @@ class FlagAssociated t where
   toFlag   :: t -> Flag
   toConstr :: Flag -> t
 
+data RecStage =
+  SendingEmail
+ |SendingKey
+ |ChangePassword
+
 data Stage =
-  Auth
+  Start
+ |Auth
  |Reg
- |Sync
- |Recovery
- |Main
+ |Recovery RecStage

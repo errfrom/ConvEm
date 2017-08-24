@@ -1,5 +1,5 @@
 module Main.Login.GUI.General
-  ( Concretized(..), ButtonKind(..), InputKind(..), LabelKind(..)
+  ( Concretized(..), ButtonKind(..), InputKind(..), LabelKind(..), ImageKind(..)
   , bind, as, build, row, wrap, short, additional ) where
 
 --------------------------------------------------------------------------------
@@ -11,6 +11,7 @@ module Main.Login.GUI.General
 import Graphics.UI.Threepenny.Core               hiding    (row)
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events (click, valueChange)
+import System.IO                                           (FilePath)
 import qualified Utils                                     (removeClass
                                                            ,getElemType)
 
@@ -35,6 +36,10 @@ data LabelKind =
  |LblDesc    String
  |LblInvalid
 
+data ImageKind =
+  Header FilePath
+ |Image  FilePath
+
 class Concretized t where
   add :: t -> UI Element
 
@@ -58,6 +63,15 @@ instance Concretized LabelKind where
   add (LblDesc text)    = Elems.h2  # setText text
                                     #. "form-text"
   add LblInvalid        = Elems.div # setId "invalid-input-text"
+
+instance Concretized ImageKind where
+  add (Image path)  = Elems.img # set (attr "src") ("/static/images/" ++ path)
+  add (Header path) = do
+    img  <- Elems.img # set (attr "src") ("/static/images/" ++ path)
+    wrap <- Elems.div #. "hdr-wrapper"
+                      # set children [ img ]
+    Elems.div #  set children [ wrap ]
+              #. "header"
 
 --Builders----------------------------------------------------------------------
 

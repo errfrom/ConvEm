@@ -79,7 +79,12 @@ input.with-error
 /* Поле ввода меньшей длины. Помещается с таким же полем в одну строку. */
 input.short
 {
-  width : 122px;
+  width : 125px;
+}
+
+input.short::-webkit-input-placeholder
+{
+  -webkit-transition : opacity 0s;
 }
 
 input.short:focus::-webkit-input-placeholder
@@ -141,14 +146,29 @@ button.btn-important:active
 
 div
 {
-  padding-top  : 10px;
+  padding-top         : 10px;
+  -webkit-user-select : none;
 }
 
 div.row
 {
-  background-color : red;
   width            : 260px;
-  height           : 40px;
+  height           : 43px;
+}
+
+div.row div
+{
+  padding-top : 0px;
+}
+
+div.row div:first-child
+{
+  float : left;
+}
+
+div.row div:last-child
+{
+  float : right;
 }
 
 .additional-btns
@@ -160,36 +180,35 @@ div.row
 
 .main-div
 {
-  -webkit-user-select : none;
   width               : 260px;
   margin              : auto;
   position            : absolute;
   left                : 0;
   right               : 0;
   bottom              : 0;
+  top                 : 130px; /* Из-за размера header. */
   text-align          : left;
+
 }
 
 #login-form.main-div
 {
-  height : 315px;
-  top    : 8%;
+  height : 286px;
 }
 
 #recovery-form.main-div
 {
-  top    : 0%;
-  height : 240px;
+  height : 233px;
 }
 
 #reg-form.main-div
 {
-  top : 3%;
+  height : 339px;
 }
 
 #start-form.main-div
 {
-  top : 40%;
+  height : 160px;
 }
 
 /** TEXT BOXES ****************************************************************/
@@ -228,13 +247,6 @@ div.row
 }
 
 /** IMAGES ********************************************************************/
-
-/*
-#textlogo
-{
-  width : 150px;
-  height : auto;
-}*/
 
 img
 {

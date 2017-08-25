@@ -41,8 +41,12 @@ import qualified Graphics.UI.Gtk.Abstract.Container       as Container
 import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
   (WebView(..), webViewNew, webViewLoadUri)
 --My----------------------------------------------------------------------------
-import qualified Main.Login.GUI.Forms as Forms  (initForms)
-import qualified Server.General       as Server (initServer)
+import qualified Server.General       as Server (initServer, initSocket)
+import Types.General
+import Types.Client
+import Types.Results
+import Types.Server                             (SocketType(..))
+import Main.Login.Decls                         ()
 --------------------------------------------------------------------------------
 
 -- | Основная функция, запускающая
@@ -70,7 +74,9 @@ startLocalServer portId= do
           return window # UI.set UI.title "DDChat"
           Elems.addStyleSheet window "fonts.css"
           Elems.addStyleSheet window "login.css"
-          Forms.initForms
+          --Forms.initForms
+          sock   <- UI.liftIO (Server.initSocket ClientSocket)
+          UI.getBody window #+ [ form Start sock  ]
 
 -- | Инициализирует GTK GUI,
 -- выступающий в роли браузера для описанного

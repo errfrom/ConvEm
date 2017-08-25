@@ -29,6 +29,7 @@ library
                      , Types.General
                      , Types.Results
                      , Types.Server
+                     , Types.Client
   build-depends:       base >= 4.7 && < 5
                      , threepenny-gui
                      , gtk

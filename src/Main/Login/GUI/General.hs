@@ -50,10 +50,10 @@ instance Concretized ButtonKind where
                                          #. "btn-link"
 
 instance Concretized InputKind where
-  add (InpSimple text)   = handleFilled =<< Elems.input # set (attr "placeholder") text
+  add (InpSimple text)   = Elems.input # set (attr "placeholder") text
                                                         # set (attr "type") "simple"
                                                         # set (attr "maxlength") "80"
-  add (InpPassword text) = handleFilled =<< Elems.input # set (attr "placeholder") text
+  add (InpPassword text) = Elems.input # set (attr "placeholder") text
                                                         # set (attr "type") "password"
                                                         # set (attr "maxlength") "80"
 
@@ -68,6 +68,7 @@ instance Concretized ImageKind where
   add (Image path)  = Elems.img # set (attr "src") ("/static/images/" ++ path)
   add (Header path) = do
     img  <- Elems.img # set (attr "src") ("/static/images/" ++ path)
+                      # set (attr "draggable") "false"
     wrap <- Elems.div #. "hdr-wrapper"
                       # set children [ img ]
     Elems.div #  set children [ wrap ]
@@ -98,11 +99,11 @@ wrap :: [UI Element] -> UI Element
 wrap elems = Elems.div #+ elems
 
 short :: UI Element -> UI Element
-short el = el #. "short"
+short el = Elems.div #+ [ el #. "short" ]
 
-row :: [UI Element] -> UI Element
-row elems = Elems.div #. "row"
-                      #+ elems
+row :: UI Element -> UI Element -> UI Element
+row elem1 elem2 = Elems.div #. "row"
+                            #+ [ elem1, elem2 ]
 
 additional :: [UI Element] -> UI Element
 additional btns = Elems.div #+ btns

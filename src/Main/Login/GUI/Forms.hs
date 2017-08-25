@@ -22,11 +22,13 @@ class Form t where
 
 -- | Инициализирует клиентский сокет и начальную форму.
 -- Последущие формы чередуются функцией switch.
+-- Также позволяет применять оформление одновременно ко
+-- всем формам.
 initForms :: UI Element
 initForms = do
   sock   <- liftIO (Server.initSocket ClientSocket)
   window <- askWindow
-  getBody window #+ [ wrap [ add (Header "header.png") ]
+  getBody window #+ [ add (Header "header.png")
                     , form Start sock ]
 
 switch :: Socket -> Stage -> UI Element -> UI Element
@@ -65,20 +67,21 @@ instance Form Stage where
                           , switch sock (Recovery SendingEmail)
                                         (add $ BtnLink "Забыли пароль?") ]]]
 
---Регистрация-------------------------------------------------------------------
+--Регистрация----*---------------------------------------------------------------
   form Reg sock = do
     window <- askWindow
     build "reg-form"
       [ wrap [ add (LblHeader "Регистрация")
              , add (LblDesc   "Введите необходимые данные для начала работы.") ]
-      , row  [ (short . add) (InpSimple "Имя"               ) `as` "inp-name"
-             , (short . add) (InpSimple "Фамилия"           ) `as` "inp-surname" ]
-      , wrap [  add          (InpSimple "E-mail"            ) `as` "inp-email"   ]
-      , row  [ (short . add) (InpPassword "Пароль"          ) `as` "inp-passw"
-             , (short . add) (InpPassword "Повторите пароль") `as` "inp-repeat"  ]
+      , wrap [  add       (InpSimple "E-mail"            ) `as` "inp-email"   ]
+      , row (short $ (add (InpSimple "Имя"               ) `as` "inp-name"))
+            (short $ (add (InpSimple "Фамилия"           ) `as` "inp-surname"))
+      , row (short $ (add (InpPassword "Пароль"          ) `as` "inp-passw"))
+            (short $ (add (InpPassword "Повторите пароль") `as` "inp-repeat"))
       , add LblInvalid
       , wrap [ add (BtnImportant "Готово") `bind` return()
-             , additional [ switch sock Auth (add $ BtnLink "Вернуться назад") ]]]
+             , additional [ switch sock Auth (add $ BtnLink "Вернуться назад")
+                          , add (BtnLink "Синхронизация") ]]]
 
 --Восстановление пароля(Email)--------------------------------------------------
   form (Recovery SendingEmail) sock = do

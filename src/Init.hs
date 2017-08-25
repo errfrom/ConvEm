@@ -8,7 +8,7 @@ module Init
 
 --Control-----------------------------------------------------------------------
 import qualified Control.Concurrent as Conc (forkIO, killThread)
-import Control.Monad                        (void)
+import Control.Monad                        (void, liftM)
 import qualified Control.Exception  as Exc  (SomeException(..))
 import Control.Exception                    (catch)
 --System------------------------------------------------------------------------
@@ -53,20 +53,20 @@ initInterface =
   let portId = 8010
   in do
     mapM_ Conc.forkIO [ startLocalServer portId, Server.initServer ]
-    webView <- startGtk portId
-    return ()
+    initGtk portId
+    Gtk.mainGUI
 
 -- | Запускает локальный сервер,
 -- декорированный функцией setup
 -- при помощи Threepenny-UI.
 startLocalServer :: Int -> IO()
-startLocalServer portId = do
+startLocalServer portId= do
   currentDir <- Dir.getCurrentDirectory
   let pathStatic = currentDir ++ ("/static/")
       config = UI.defaultConfig { UI.jsPort   = Just portId
                                 , UI.jsStatic = Just pathStatic }
   UI.startGUI config setup
-  where setup window = void $ do
+  where setup window  = void $ do
           return window # UI.set UI.title "DDChat"
           Elems.addStyleSheet window "fonts.css"
           Elems.addStyleSheet window "login.css"
@@ -75,11 +75,11 @@ startLocalServer portId = do
 -- | Инициализирует GTK GUI,
 -- выступающий в роли браузера для описанного
 -- функцией 'setup' интерфейса взаимодействия.
-startGtk :: Int -> IO WV.WebView
-startGtk portId =
+initGtk :: Int -> IO Win.Window
+initGtk portId =
   let url         = "http://127.0.0.1:" ++ (show portId)
-      minSize     = (500, 820) :: (Int, Int)
-      defaultSize = 820
+      minSize     = (400, 555) :: (Int, Int)
+      defaultSize = 700
   in do
     improvedInitGUI
     window         <- Win.windowNew
@@ -95,8 +95,7 @@ startGtk portId =
     WV.webViewLoadUri webView url
     Widget.onDestroy window (safeQuit portId)
     Widget.widgetShowAll window
-    Gtk.mainGUI
-    return webView
+    return window
   where improvedInitGUI =
           let gtkInitErrorMsg = "Ошибка инициализации графического интерфейса."
           in do

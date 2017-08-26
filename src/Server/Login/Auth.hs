@@ -12,8 +12,7 @@ import qualified Crypto.BCrypt         as Crypt (validatePassword)
 import qualified Database.MySQL.Simple as MySql
 import Database.MySQL.Simple                    (ConnectInfo(..), Only(..))
 import Types.Results                            (AuthResult(..))
-import Types.General                            (HashedPassword, FlagAssociated(..))
-
+import Types.General                            (FlagAssociated(..))
 
 handleUser :: Sock.Socket -> IO ByteString
 handleUser conn = do
@@ -32,12 +31,12 @@ handleUser conn = do
 -- Получает хеш пароля по указанному значению
 -- поля email. Если пользователь отсутствует в базе,
 -- возвращает Nothing.
-getHashedPassword :: ByteString -> IO (Maybe HashedPassword)
+getHashedPassword :: ByteString -> IO (Maybe ByteString)
 getHashedPassword email =
   let query = "SELECT USERS_PASSWORD FROM USERS WHERE USER_EMAIL = ?"
   in do
-    conn <- MySql.connect MySql.defaultConnectInfo 
-    sqlResult <- MySql.query conn query (Only email) :: IO [Only HashedPassword]
+    conn <- MySql.connect MySql.defaultConnectInfo
+    sqlResult <- MySql.query conn query (Only email) :: IO [Only ByteString]
     return $ case sqlResult of
                [] -> Nothing
                [hashedPassword] -> Just $ fromOnly hashedPassword

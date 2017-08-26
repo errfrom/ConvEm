@@ -1,6 +1,6 @@
-module Main.Login.GUI.General
+module Main.Login.GUI
   ( Concretized(..), ButtonKind(..), InputKind(..), LabelKind(..), ImageKind(..)
-  , bind, as, build, row, wrap, short, additional ) where
+  , switch, bind, as, build, row, wrap, short, additional ) where
 
 --------------------------------------------------------------------------------
 -- Содержит часто используемые элементы, а также
@@ -12,6 +12,8 @@ import Graphics.UI.Threepenny.Core               hiding    (row)
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events (click, valueChange)
 import System.IO                                           (FilePath)
+import Network.Socket                                      (Socket)
+import Types.Hierarchy
 import qualified Utils                                     (removeClass
                                                            ,getElemType)
 
@@ -75,6 +77,18 @@ instance Concretized ImageKind where
               #. "header"
 
 --Builders----------------------------------------------------------------------
+
+switch :: (Form s r) => Socket -> s -> UI Element -> UI Element
+switch sock stage el = el >>= \el' -> worker el' >> return el'
+  where worker el = on Events.click el $ \_ -> do
+          window <- liftIO (getWindow el)
+          clearWindow window
+          getBody window #+ [ form stage sock ]
+
+        clearWindow window = do
+          [mainDiv] <- getElementsByClassName window "main-div"
+          [center]  <- getElementsByTagName   window "center"
+          mapM_ delete [ mainDiv, center ]
 
 -- | Связывает кнопку с определенным действием.
 bind :: UI Element -> UI () -> UI Element

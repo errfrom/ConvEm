@@ -17,18 +17,17 @@ library
   hs-source-dirs:      src
   exposed-modules:     Init
   other-modules:       Utils
-                     , Main.Login.GUI.Forms
-                     , Main.Login.GUI.Auth
-                     , Main.Login.GUI.General
-                     , Main.Login.Logic.Auth
-                     , Main.Login.Logic.General
+                     , Main.Login.GUI
+                     , Main.Login.Logic
+                     , Main.Login.Manager
+                     , Main.Login.Auth
                      , Server.General
                      , Server.Login.Auth
                      , Templates.GenFlagAssociated
                      , Types.Data
                      , Types.General
+                     , Types.Hierarchy
                      , Types.Results
-                     , Types.Server
   build-depends:       base >= 4.7 && < 5
                      , threepenny-gui
                      , gtk

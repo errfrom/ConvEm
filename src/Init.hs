@@ -42,11 +42,8 @@ import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
   (WebView(..), webViewNew, webViewLoadUri)
 --My----------------------------------------------------------------------------
 import qualified Server.General       as Server (initServer, initSocket)
-import Types.General
-import Types.Client
-import Types.Results
 import Types.Server                             (SocketType(..))
-import Main.Login.Decls                         ()
+import Main.Login.Decls
 --------------------------------------------------------------------------------
 
 -- | Основная функция, запускающая
@@ -76,7 +73,7 @@ startLocalServer portId= do
           Elems.addStyleSheet window "login.css"
           --Forms.initForms
           sock   <- UI.liftIO (Server.initSocket ClientSocket)
-          UI.getBody window #+ [ form Start sock  ]
+          UI.getBody window #+ [ form Auth sock  ]
 
 -- | Инициализирует GTK GUI,
 -- выступающий в роли браузера для описанного

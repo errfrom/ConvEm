@@ -1,18 +1,19 @@
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module Types.General
   ( FlagAssociated(..)
-  , RecStage(..), Stage(..)
-  , HashedPassword ) where
+  , SocketType(..), RequestType(..) ) where
 
 --------------------------------------------------------------------------------
 -- Набор различной дополнительной/общей информации,
 -- потенциально использующейся различными модулями.
 --------------------------------------------------------------------------------
 
-import Data.ByteString.Char8 (ByteString(..))
+import Data.ByteString.Char8       (ByteString(..), pack)
+import Templates.GenFlagAssociated (deriveFlagAssociated)
 
-
-type Flag           = ByteString
-type HashedPassword = ByteString
+type Flag = ByteString
 
 -- Экземпляры этого класса ассоциируются с определенными флагами,
 -- передающимися к серверу и обратно. Использование функций
@@ -26,13 +27,14 @@ class FlagAssociated t where
   toFlag   :: t -> Flag
   toConstr :: Flag -> t
 
-data RecStage =
-  SendingEmail
- |SendingKey
- |ChangePassword
+data SocketType =
+  ServerSocket
+ |ClientSocket
 
-data Stage =
-  Start
- |Auth
+data RequestType =
+  Auth
  |Reg
- |Recovery RecStage
+ |Recovery
+ |Exit
+
+$(deriveFlagAssociated [ "RequestType" ])

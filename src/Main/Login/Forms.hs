@@ -1,5 +1,4 @@
-module Main.Login.GUI.Forms
-  ( startForm, authForm, regForm, recoveryForm_Email ) where
+module Main.Login.GUI.Forms {-# DEPRECATED "Will be removed and decentralized soon" #-} where
 
 --------------------------------------------------------------------------------
 -- Содержит все GUI формы, а также осуществляет перемещение между оными.
@@ -15,18 +14,6 @@ import Types.General                                     (RecStage(..), Stage(..
 import Types.Server                                      (SocketType(..))
 import Main.Login.GUI.Auth                               (handleAuth)
 import Main.Login.GUI.General
-
-{-
--- | Инициализирует клиентский сокет и начальную форму.
--- Последущие формы чередуются функцией switch.
--- Также позволяет применять оформление одновременно ко
--- всем формам.
-initForms :: UI Element
-initForms = do
-  sock   <- liftIO (Server.initSocket ClientSocket)
-  window <- askWindow
-  getBody window #+ [ add (Header "header.png")
-                    , form Start sock ] -}
 
 switch :: Socket -> Stage -> UI Element -> UI Element
 switch sock stage el = el

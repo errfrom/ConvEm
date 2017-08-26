@@ -14,10 +14,10 @@ import qualified Network.Socket     as Sock
 import Network.Socket.ByteString            (recv, send)
 import qualified Control.Concurrent as Conc (forkIO)
 import Control.Monad                        (forever, void)
-import Types.Server                         (SocketType(..), RequestType(..))
-import Types.General                        (FlagAssociated(..))
+import Types.General                        (FlagAssociated(..)
+                                            ,SocketType(..), RequestType(..))
 import Server.Login.Auth                    (handleUser)
-import Server.Login.Recovery                (handleReceiver)
+--import Server.Login.Recovery                (handleReceiver)
 
 
 -- | Инициализирует сокет в зависимости
@@ -65,7 +65,7 @@ handleConn sock conn addr = do
   flag <- recv conn 1
   case (toConstr flag :: RequestType) of
     Auth     -> handleUser conn     >>= answerClient
-    Recovery -> handleReceiver conn >>= answerClient
+--    Recovery -> handleReceiver conn >>= answerClient
     Exit     -> Sock.close conn >>  Sock.close sock
     _        -> error "Undefined flag."
   where answerClient res = send conn res >> return ()

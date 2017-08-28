@@ -17,14 +17,17 @@ library
   hs-source-dirs:      src
   exposed-modules:     Init
   other-modules:       Utils
-                     , Forms
-                     , Main.Login.GUI.Auth
-                     , Main.Login.GUI.General
-                     , Main.Login.Logic.Auth
-                     , Main.Login.Logic.General
+                     , Main.Login.GUI
+                     , Main.Login.Logic
+                     , Main.Login.Manager
+                     , Main.Login.Auth
+                     , Server.General
+                     , Server.Login.Auth
+                     , Templates.Build
                      , Templates.GenFlagAssociated
                      , Types.Data
                      , Types.General
+                     , Types.Hierarchy
                      , Types.Results
   build-depends:       base >= 4.7 && < 5
                      , threepenny-gui
@@ -43,12 +46,15 @@ library
                      , syb-with-class
                      , transformers
                      , HaskellNet-SSL
+                     , regex-posix
+                     , text
+                     , MissingH
   default-language:    Haskell2010
 
 executable DDChat-exe
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -dynamic -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , DDChat
                      , directory

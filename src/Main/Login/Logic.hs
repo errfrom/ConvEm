@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Main.Login.Logic.General
+module Main.Login.Logic
   ( checkEmail, askServerResp ) where
 
 --------------------------------------------------------------------------------
@@ -9,19 +9,17 @@ module Main.Login.Logic.General
 -- входа пользователя в систему.
 --------------------------------------------------------------------------------
 
-import qualified Network.Socket            as Sock   (Socket(..))
+import Network.Socket                                (Socket)
 import qualified Network.Socket.ByteString as SockBS (send, recv)
 import qualified Data.ByteString           as BS     (singleton, append)
 import Data.Word8                                    (_space)
 import Types.Data                                    (UserData(..), RecoveryData'(..))
-import Types.Results                                 (Results(..), AuthResult(..))
-import Types.General                                 (FlagAssociated(..))
-import Types.Server                                  (RequestType(..))
+import Types.Results                                 (Result(..), AuthResult(..))
+import Types.General                                 (FlagAssociated(..)
+                                                     ,RequestType(..))
+
 
 -- | Проверяет, может ли существовать подобный email.
--- Чем тщательнее выполняется проверка, тем меньше работы
--- предстоит сделать серверу для выявления несуществующих
--- E-mail адресов.
 checkEmail :: String -> Bool
 checkEmail email
  |isBlank email          = False
@@ -37,7 +35,7 @@ checkEmail email
 -- ассоциирует с этим действия флаг и отсылает на сервер флаг, а затем
 -- и сами данные объединенные в ByteString. Таким образом сервер знает,
 -- какие данные ему предстоит обработать.
-askServerResp :: (FlagAssociated a, Results a) => Sock.Socket -> UserData -> IO a
+askServerResp :: (FlagAssociated a, Result a) => Socket -> UserData -> IO a
 askServerResp sock AuthData{..} = do
   SockBS.send sock (toFlag Auth)
   _ <- SockBS.recv sock 1 -- Исскуственная блокировка.

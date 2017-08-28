@@ -6,7 +6,7 @@ module Types.Data
 -- взаимодействия с программой.
 --------------------------------------------------------------------------------
 
-import Data.ByteString.Char8 (ByteString(..))
+import Data.ByteString.Char8 (ByteString)
 
 data RecoveryData' =
   RDKey   ByteString

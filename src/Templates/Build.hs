@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Templates.Build
-  ( generateRestoring ) where
+  ( generateRestoring, createAppDir ) where
 
 
 import qualified Language.Haskell.TH as TH

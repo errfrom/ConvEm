@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
@@ -14,7 +16,7 @@ import qualified Network.Socket.ByteString as SockBS (send, recv)
 import qualified Data.ByteString           as BS     (singleton, append)
 import Data.Word8                                    (_space)
 import Types.Data                                    (UserData(..), RecoveryData'(..))
-import Types.Results                                 (Result(..), AuthResult(..))
+import Types.Results                                 (Result)
 import Types.General                                 (FlagAssociated(..)
                                                      ,RequestType(..))
 
@@ -28,7 +30,7 @@ checkEmail email
  |(not . elem '.' . afterEmailSymbol) email  = False -- Нет '.' после '@'
  |last email == '.' = False -- Заканчивается на '.'
  |otherwise         = True
- where afterEmailSymbol email = (tail . snd . flip break email) (== '@')
+ where afterEmailSymbol email' = (tail . snd . flip break email') (== '@')
        isBlank value          = length value == 0
 
 -- | Принимает входные данные какого-либо пользовательского действия,
@@ -37,15 +39,15 @@ checkEmail email
 -- какие данные ему предстоит обработать.
 askServerResp :: (FlagAssociated a, Result a) => Socket -> UserData -> IO a
 askServerResp sock AuthData{..} = do
-  SockBS.send sock (toFlag Auth)
+  _ <- SockBS.send sock (toFlag Auth)
   _ <- SockBS.recv sock 1 -- Исскуственная блокировка.
   let data_ = foldl BS.append "" [ lEmail, BS.singleton _space, lPassword ]
-  SockBS.send sock data_
+  _ <- SockBS.send sock data_
   flag <- SockBS.recv sock 1
   return (toConstr flag)
 askServerResp sock (RecoveryData (RDEmail email)) = do
-  SockBS.send sock (toFlag Recovery)
+  _ <- SockBS.send sock (toFlag Recovery)
   _ <- SockBS.recv sock 1
-  SockBS.send sock email
+  _ <- SockBS.send sock email
   flag <- SockBS.recv sock 1
   return (toConstr flag)

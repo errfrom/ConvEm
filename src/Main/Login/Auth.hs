@@ -1,8 +1,11 @@
+{-# OPTIONS_GHC -fno-warn-orphans             #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
+
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Main.Login.Auth where
 
-import Graphics.UI.Threepenny.Core
+import Graphics.UI.Threepenny.Core             hiding    (value)
 import qualified Graphics.UI.Threepenny.Events as Events (focus)
 import qualified Data.ByteString.Char8         as BS     (pack)
 import qualified Control.Monad                 as Monad  (void)
@@ -25,23 +28,23 @@ instance Callable Auth AuthResult where
 --------------------------------------------------------------------------------
 
 instance Checkable Auth AuthResult where
-  check Auth (email:passw:_) =
+  check _ (email:passw:_) =
     case (worker email passw) of
       []       -> Nothing
       mistakes -> Just (InvalidValues mistakes)
     where isBlank value = length value == 0
           checkPassw    = (not . isBlank)
-          check toCheck funCheck res
+          checkValue toCheck funCheck res
            |funCheck toCheck = []
            |otherwise        = res : []
-          worker email passw =
-            (check email Logic.checkEmail InEmailField) ++
-            (check passw checkPassw InPasswordField)
+          worker email' passw' =
+            (checkValue email' Logic.checkEmail InEmailField) ++
+            (checkValue passw' checkPassw InPasswordField)
 
 --------------------------------------------------------------------------------
 
 instance Manageable Auth AuthResult where
-  handle Auth sock = do
+  handle _ sock = do
     (invalidInpBox:inpEmail:inpPassw:_) <- mapM Utils.getElemById
                                              [ "invalid-input-text"
                                              , "inp-email"
@@ -81,8 +84,7 @@ instance Manageable Auth AuthResult where
 --------------------------------------------------------------------------------
 
 instance Form Auth AuthResult where
-  form Auth sock = do
-    window <- askWindow
+  form _ sock = do
     build "login-form"
       [ wrap [ add (LblHeader "Авторизация")
              , add (LblDesc   "Введите ваш E-mail и пароль для продолжения работы.") ]

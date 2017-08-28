@@ -10,7 +10,7 @@ module Types.General
 -- потенциально использующейся различными модулями.
 --------------------------------------------------------------------------------
 
-import Data.ByteString.Char8       (ByteString(..), pack)
+import Data.ByteString.Char8       (ByteString, pack)
 import Templates.GenFlagAssociated (deriveFlagAssociated)
 
 type Flag = ByteString

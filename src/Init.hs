@@ -7,8 +7,8 @@ module Init
 --------------------------------------------------------------------------------
 
 --Control-----------------------------------------------------------------------
-import qualified Control.Concurrent as Conc (forkIO, killThread)
-import Control.Monad                        (void, liftM)
+import qualified Control.Concurrent as Conc (forkIO)
+import Control.Monad                        (void)
 import qualified Control.Exception  as Exc  (SomeException(..))
 import Control.Exception                    (catch)
 --System------------------------------------------------------------------------
@@ -23,26 +23,25 @@ import qualified System.Directory       as Dir     (getCurrentDirectory
 --Threpenny---------------------------------------------------------------------
 import qualified Graphics.UI.Threepenny.Core     as UI
 import qualified Graphics.UI.Threepenny.Elements as Elems (addStyleSheet)
-import           Graphics.UI.Threepenny.Core              ((#), (#+))
+import           Graphics.UI.Threepenny.Core              ((#))
 --GTK---------------------------------------------------------------------------
 import qualified Graphics.UI.Gtk.General.General          as Gtk
   (initGUI, mainQuit, mainGUI)
 import qualified Graphics.UI.Gtk.Windows.Window           as Win
-  (Window(..), windowNew, windowTitle, windowDefaultWidth
+  (Window, windowNew, windowTitle, windowDefaultWidth
   ,windowDefaultHeight)
 import qualified Graphics.UI.Gtk.Scrolling.ScrolledWindow as SWin
   (scrolledWindowNew)
 import qualified Graphics.UI.Gtk.Abstract.Widget          as Widget
-  (Allocation(..), onDestroy, widgetShowAll
+  (onDestroy, widgetShowAll
   ,widgetSetSizeRequest)
 import qualified Graphics.UI.Gtk.Abstract.Container       as Container
   (containerChild)
 --WebKit------------------------------------------------------------------------
 import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
-  (WebView(..), webViewNew, webViewLoadUri)
+  (webViewNew, webViewLoadUri)
 --My----------------------------------------------------------------------------
 import qualified Server.General as Server  (initServer)
-import Types.General                       (SocketType(..))
 import Main.Login.Manager       as Manager (initForms)
 --------------------------------------------------------------------------------
 
@@ -54,7 +53,7 @@ initInterface =
   let portId = 8010
   in do
     mapM_ Conc.forkIO [ startLocalServer portId, Server.initServer ]
-    initGtk portId
+    _ <- initGtk portId
     Gtk.mainGUI
 
 -- | Запускает локальный сервер,
@@ -68,7 +67,7 @@ startLocalServer portId= do
                                 , UI.jsStatic = Just pathStatic }
   UI.startGUI config setup
   where setup window  = void $ do
-          return window # UI.set UI.title "DDChat"
+          _ <- return window # UI.set UI.title "DDChat"
           Elems.addStyleSheet window "fonts.css"
           Elems.addStyleSheet window "login.css"
           Manager.initForms
@@ -82,7 +81,7 @@ initGtk portId =
       minSize     = (400, 555) :: (Int, Int)
       defaultSize = 700
   in do
-    improvedInitGUI
+    _ <- improvedInitGUI
     window         <- Win.windowNew
     scrolledWindow <- SWin.scrolledWindowNew Nothing Nothing
     webView        <- WV.webViewNew
@@ -94,7 +93,7 @@ initGtk portId =
     Widget.widgetSetSizeRequest window (fst minSize) (snd minSize)
     Attrs.set scrolledWindow [ Container.containerChild := webView ]
     WV.webViewLoadUri webView url
-    Widget.onDestroy window (safeQuit portId)
+    _ <- Widget.onDestroy window (safeQuit portId)
     Widget.widgetShowAll window
     return window
   where improvedInitGUI =
@@ -117,16 +116,16 @@ safeQuit portId = do
     then getPidByPortId portId
     else return ()
   Gtk.mainQuit
-  where linuxReadProcess portId =
-          let portArg = ":" ++ (show portId)
+  where linuxReadProcess portId' =
+          let portArg = ":" ++ (show portId')
           in Process.readProcessWithExitCode "lsof" ["-t", "-i", portArg] ""
 
         linuxKillProcess readProcessOutput =
           let command = "kill -9 " ++ readProcessOutput
           in Process.system command
 
-        getPidByPortId portId = do
-          (exitCode, stdout', _) <- linuxReadProcess portId
+        getPidByPortId portId' = do
+          (exitCode, stdout', _) <- linuxReadProcess portId'
           case exitCode of
             Exit.ExitFailure _ -> return ()
             Exit.ExitSuccess   -> do

@@ -8,15 +8,15 @@ module Utils
 --------------------------------------------------------------------------------
 
 import Graphics.UI.Threepenny.Core
-import Text.Printf (printf)
+import Text.Printf               (printf)
 import qualified Data.Maybe as M (fromJust)
 
 
 -- | Удаляет определенный css-класс у элемента.
 removeClass :: Element -> String -> UI()
-removeClass element class' =
+removeClass el class' =
   let jsPattern = printf ".removeClass('%s')" class'
-      jsFun     = ffi ("$(%1)" ++ jsPattern) element
+      jsFun     = ffi ("$(%1)" ++ jsPattern) el
   in runFunction jsFun
 
 -- | Возвращает css-тип элемента.
@@ -39,4 +39,5 @@ hasClass el class' =
          | val == "true" = True
          | otherwise     = False
 
+getValue :: Element -> UI String
 getValue = get value

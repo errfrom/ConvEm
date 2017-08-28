@@ -1,18 +1,18 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Main.Login.Manager
   ( initForms ) where
 
 import Graphics.UI.Threepenny.Core
-import Network.Socket                     (Socket)
 import qualified Server.General as Server (initSocket)
 import Main.Login.GUI
-import Main.Login.Auth
+import Main.Login.Auth                    ()
 import Types.General                      (SocketType(..))
 import Types.Hierarchy hiding             (Callable(..), Checkable(..)
                                           ,Manageable(..), Form(..))
 
 instance NonfunForm Start where
   nonfunForm Start sock = do
-    window <- askWindow
     build "start-form"
      [ wrap [ add (LblHeader "Приветствуем вас!")
             , add (LblDesc   "Извольте насладиться ощущением прогрессивного общения.") ]

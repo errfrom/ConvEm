@@ -3,7 +3,7 @@
 
 module Types.Results
   ( MistakeIn(..)
-  , AuthResult(..), RecoveryResult(..), Result(..) ) where
+  , AuthResult(..), RecoveryResult(..), Result ) where
 
 --------------------------------------------------------------------------------
 -- Типы данных, описывающие всевозможные результаты

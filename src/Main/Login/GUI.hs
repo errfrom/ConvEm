@@ -20,6 +20,7 @@ import qualified Utils                                     (removeClass
 
 --Attr setters------------------------------------------------------------------
 
+setId, setText :: String -> UI Element -> UI Element
 setId   id'    = set (attr "id")    id'
 setText text'  = set text text'
 
@@ -46,23 +47,23 @@ class Concretized t where
   add :: t -> UI Element
 
 instance Concretized ButtonKind where
-  add (BtnImportant text) = Elems.button # setText text
+  add (BtnImportant text') = Elems.button # setText text'
                                          #. "btn-important"
-  add (BtnLink text)      = Elems.button # setText text
+  add (BtnLink text')      = Elems.button # setText text'
                                          #. "btn-link"
 
 instance Concretized InputKind where
-  add (InpSimple text)   = Elems.input # set (attr "placeholder") text
-                                                        # set (attr "type") "simple"
-                                                        # set (attr "maxlength") "80"
-  add (InpPassword text) = Elems.input # set (attr "placeholder") text
-                                                        # set (attr "type") "password"
-                                                        # set (attr "maxlength") "80"
+  add (InpSimple text')   = handleFilled =<< Elems.input # set (attr "placeholder") text'
+                                                         # set (attr "type") "simple"
+                                                         # set (attr "maxlength") "80"
+  add (InpPassword text') = handleFilled =<< Elems.input # set (attr "placeholder") text'
+                                                         # set (attr "type") "password"
+                                                         # set (attr "maxlength") "80"
 
 instance Concretized LabelKind where
-  add (LblHeader text)  = Elems.h1  # setText text
+  add (LblHeader text')  = Elems.h1  # setText text'
                                     #.  "hdr-text"
-  add (LblDesc text)    = Elems.h2  # setText text
+  add (LblDesc text')    = Elems.h2  # setText text'
                                     #. "form-text"
   add LblInvalid        = Elems.div # setId "invalid-input-text"
 
@@ -71,17 +72,17 @@ instance Concretized ImageKind where
   add (Header path) = do
     img  <- Elems.img # set (attr "src") ("/static/images/" ++ path)
                       # set (attr "draggable") "false"
-    wrap <- Elems.div #. "hdr-wrapper"
-                      # set children [ img ]
-    Elems.div #  set children [ wrap ]
+    wrapper <- Elems.div #. "hdr-wrapper"
+                         # set children [ img ]
+    Elems.div #  set children [ wrapper ]
               #. "header"
 
 --Builders----------------------------------------------------------------------
 
 switch :: (Form s r) => Socket -> s -> UI Element -> UI Element
 switch sock stage el = el >>= \el' -> worker el' >> return el'
-  where worker el = on Events.click el $ \_ -> do
-          window <- liftIO (getWindow el)
+  where worker el' = on Events.click el' $ \_ -> do
+          window <- liftIO (getWindow el')
           clearWindow window
           getBody window #+ [ form stage sock ]
 
@@ -104,10 +105,10 @@ as el id' = el # setId id'
 -- | Строит форму.
 build :: String -> [UI Element] -> UI Element
 build id' elems = do
-  form <- Elems.div #. "main-div"
-                    #  setId    id'
-                    #+ elems
-  Elems.center # set children [ form ]
+  mainDiv <- Elems.div #. "main-div"
+                       #  setId    id'
+                       #+ elems
+  Elems.center # set children [ mainDiv ]
 
 wrap :: [UI Element] -> UI Element
 wrap elems = Elems.div #+ elems

@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 module Templates.GenFlagAssociated
   ( deriveFlagAssociated ) where
 
@@ -45,7 +47,7 @@ funSimple name tupCFs funType =
                                  (TH.NormalB body)
                                  empty
           in clause : (buildClauses xs ToFlag)
-        buildClauses tupCFs ToConstr =
+        buildClauses tupCFs' ToConstr =
           let parName = TH.mkName "fl"
               guard x = TH.NormalG $ TH.InfixE (Just $ TH.VarE parName)
                                                (TH.VarE $ (TH.mkName "=="))
@@ -53,7 +55,7 @@ funSimple name tupCFs funType =
               gRes  x = TH.ConE x
               clause  = TH.Clause (singleton $ TH.VarP parName)
                                   (TH.GuardedB [ (guard fl, gRes cName)
-                                               | (fl, (cName, _, _, _)) <- tupCFs] )
+                                               | (fl, (cName, _, _, _)) <- tupCFs'] )
                                   empty
           in singleton clause
 

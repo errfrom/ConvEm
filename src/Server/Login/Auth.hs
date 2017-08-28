@@ -5,18 +5,18 @@ module Server.Login.Auth
 
 import qualified Network.Socket        as Sock
 import Network.Socket.ByteString                (recv, send)
-import qualified Data.ByteString       as BS    (singleton, split)
-import Data.ByteString                          (ByteString(..))
+import qualified Data.ByteString       as BS    (split)
+import Data.ByteString                          (ByteString)
 import Data.Word8                               (_space)
 import qualified Crypto.BCrypt         as Crypt (validatePassword)
 import qualified Database.MySQL.Simple as MySql
-import Database.MySQL.Simple                    (ConnectInfo(..), Only(..))
+import Database.MySQL.Simple                    (Only(..))
 import Types.Results                            (AuthResult(..))
 import Types.General                            (FlagAssociated(..))
 
 handleUser :: Sock.Socket -> IO ByteString
 handleUser conn = do
-  send conn "1"
+  _     <- send conn "1"
   data_ <- recv conn 200
   let email:passw:_ = BS.split _space data_
   mPasswHash <- getHashedPassword email

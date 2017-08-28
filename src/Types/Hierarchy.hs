@@ -3,7 +3,7 @@
 {-# LANGUAGE ConstraintKinds        #-}
 
 module Types.Hierarchy
-  ( RecStage(..), Stage(..), Start(..), Auth(..), Reg(..), Recovery(..)
+  ( RecStage(..), Stage, Start(..), Auth(..), Reg(..), Recovery(..)
   , Callable(..), Checkable(..), Manageable(..), Form(..), NonfunForm(..) )
   where
 
@@ -15,7 +15,7 @@ module Types.Hierarchy
 import Graphics.UI.Threepenny.Core (UI, Element)
 import Network.Socket              (Socket)
 import Types.General               (FlagAssociated(..))
-import Types.Results               (Result(..))
+import Types.Results               (Result)
 
 
 data RecStage =

@@ -62,7 +62,7 @@ initInterface =
 startLocalServer :: Int -> IO()
 startLocalServer portId= do
   currentDir <- Dir.getCurrentDirectory
-  let pathStatic = currentDir ++ ("/static/")
+  let pathStatic = currentDir ++ ("/.static/")
       config = UI.defaultConfig { UI.jsPort   = Just portId
                                 , UI.jsStatic = Just pathStatic }
   UI.startGUI config setup

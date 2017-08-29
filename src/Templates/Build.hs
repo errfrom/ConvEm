@@ -1,18 +1,18 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell, OverloadedStrings #-}
 
 module Templates.Build
-  ( generateRestoring, createAppDir ) where
-
+  ( build ) where
 
 import qualified Language.Haskell.TH as TH
+import qualified Data.ByteString     as BS     (readFile)
 import qualified System.Directory    as Dir    (getDirectoryContents
                                                ,createDirectoryIfMissing
                                                ,doesDirectoryExist)
 import System.FilePath.Posix                   (pathSeparator)
 import System.Info                             (os, arch)
-import System.FilePath.Posix                   (dropFileName)
+import System.FilePath.Posix                   (dropFileName, takeFileName)
 import Text.Regex.Posix                        ((=~))
-import qualified Data.Text           as Text   (isSuffixOf, pack)
+import qualified Data.Text           as Text   (isSuffixOf, isPrefixOf, pack)
 import qualified Data.String.Utils   as SUtils (replace)
 
 
@@ -70,42 +70,51 @@ walkDirectory startDir = do
                else (full:) <$> (worker dir xs)
 
 generateRestoring :: TH.DecsQ
-generateRestoring = do
-  fun <- TH.funD (TH.mkName "restoreStatic") [generateClause]
-  return [fun]
-  where generateClause = do
+generateRestoring = [d| restoreStatic :: IO [()]
+                        restoreStatic = $(generateBody) |]
+  where generateBody = do
           -- Использование './' позволяет нам в дальнейшем
           -- создавать корректный путь к генерируемым файлам.
-          dataFiles <- TH.runIO (walkDirectory "./static/css")
+          dataFiles <- TH.runIO (walkDirectory "./static/css") -- NOTE
           genData   <- mapM getFileGenData dataFiles
-          TH.clause [] (TH.normalB $ return (createExp genData)) []
+          createExp genData ["logo.png"]
 
         getFileGenData file =
           let newFilePath = SUtils.replace "./static" "./.static" file
           in do
-            content <- TH.runIO (SUtils.replace "\n" "\\n" <$> readFile file)
+            txtContent <- TH.runIO (readFile file)
+            -- NOTE: Исключение зачем-то возвращается в виде текста.
+            content    <- TH.runIO $
+              if (Text.isPrefixOf "*** Exception:" $ Text.pack txtContent)
+                then BS.readFile file >>= return . show
+                else return (SUtils.replace "\n" "\\n" txtContent)
             return (newFilePath, content)
 
-        createExp ((file, content):xs) =
-          -- TODO: Looks very bad -> rewrite via Quasi Quotes.
-          let folder     = dropFileName file
-              createDir' = TH.mkName "System.Directory.createDirectoryIfMissing"
-              bind'      = TH.mkName ">>"
-              writeF'    = TH.mkName "System.IO.writeFile"
-              boolTrue   = TH.mkName "True"
-              replace'   = TH.mkName "Data.String.Utils.replace"
-          -- Трансформируется в:
-          --   createDirectoryIfMissing {folder} >>
-          --     writeFile {file} (replace "\\n" "\n" {content})
-          in TH.InfixE
-               (Just $ TH.AppE
-                 (TH.AppE (TH.VarE createDir') (TH.ConE boolTrue))
-                 (TH.LitE (TH.StringL folder)))
-               (TH.VarE bind')
-               (Just $ (TH.AppE
-                 (TH.AppE (TH.VarE writeF') (TH.LitE (TH.StringL file)))
-                 (TH.AppE
-                   (TH.AppE
-                     (TH.AppE (TH.VarE replace') (TH.LitE (TH.StringL "\\n")))
-                     (TH.LitE (TH.StringL "\n")))
-                   (TH.LitE (TH.StringL content)))))
+        createExp genData'@((file, _):nextData) ignoreList
+         |elem (takeFileName file) ignoreList = createExp nextData ignoreList
+         |otherwise =
+            -- Трансформируется в:
+            --   createDirectoryIfMissing {folder} >>
+            --     writeFile {file} (replace "\\n" "\n" {content})
+           let exps = map (\(f, content) -> worker f content (dropFileName f))
+                          genData'
+           in TH.appE [e| sequence |] (TH.listE exps)
+           where -- TODO: Сделать поддержку бинарных файлов.
+                 --       Легко реализуется расширением genData еще одним полем
+                 --       с типом файла (бинарный, текстовый) и последующей
+                 --       обработкой worker'ом.
+                 worker file' content' folder' =
+                   TH.infixE (Just $ createDirectory' folder')
+                             [e| (>>) |]
+                             (Just $ writeFile' file' (replace' content'))
+                 asStr = (TH.litE . TH.StringL)
+                 writeFile' f content'    =
+                   TH.appE (TH.appE [e| writeFile |] $ asStr f) content'
+                 replace' content'        =
+                   TH.appE [e| SUtils.replace "\\n" "\n" |] (asStr content')
+                 createDirectory' folder' =
+                   TH.appE [e| Dir.createDirectoryIfMissing True |] (asStr folder')
+
+-- | Основная функция, на этапе компиляции создающая
+build :: TH.DecsQ
+build = TH.runIO (createAppDir ".") >> generateRestoring

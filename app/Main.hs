@@ -2,15 +2,10 @@
 
 module Main where
 
-import qualified Init                    (initInterface)
+import qualified Init  (initInterface)
+import Templates.Build (build)
 
-import Templates.Build   (generateRestoring)
-import System.Directory  (createDirectoryIfMissing)
-import System.IO         (writeFile)
-import Data.String.Utils (replace)
-
-
-$(generateRestoring)
+$(build)
 
 main :: IO ()
 main = do

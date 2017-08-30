@@ -1,22 +1,25 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell, OverloadedStrings #-}
 
 module Templates.Build
-  ( generateRestoring, createAppDir ) where
+  ( build ) where
 
-
-import qualified Language.Haskell.TH as TH
-import qualified System.Directory    as Dir    (getDirectoryContents
-                                               ,createDirectoryIfMissing
-                                               ,doesDirectoryExist)
-import System.FilePath.Posix                   (pathSeparator)
-import System.Info                             (os, arch)
-import System.FilePath.Posix                   (dropFileName)
-import Text.Regex.Posix                        ((=~))
-import qualified Data.Text           as Text   (isSuffixOf, pack)
-import qualified Data.String.Utils   as SUtils (replace)
+import qualified Language.Haskell.TH   as TH
+import qualified Data.ByteString.Char8 as BS     (ByteString, pack, unpack
+                                                 ,readFile, writeFile)
+import qualified System.Directory      as Dir    (getDirectoryContents
+                                                 ,createDirectoryIfMissing
+                                                 ,doesDirectoryExist)
+import System.FilePath.Posix                     (pathSeparator)
+import System.Info                               (os, arch)
+import System.FilePath.Posix                     (dropFileName, takeFileName)
+import Text.Regex.Posix                          ((=~))
+import qualified Data.Text             as Text   (isSuffixOf, isPrefixOf, pack)
+import Data.Text.Encoding                        (decodeUtf8')
+import qualified Data.String.Utils     as SUtils (replace)
 
 
 type CabalContent = String
+data FileType = TextType | BinaryType
 
 pathSep :: String
 pathSep = pathSeparator : []
@@ -70,42 +73,52 @@ walkDirectory startDir = do
                else (full:) <$> (worker dir xs)
 
 generateRestoring :: TH.DecsQ
-generateRestoring = do
-  fun <- TH.funD (TH.mkName "restoreStatic") [generateClause]
-  return [fun]
-  where generateClause = do
+generateRestoring = [d| restoreStatic :: IO [()]
+                        restoreStatic = $(generateBody) |]
+  where generateBody = do
           -- Использование './' позволяет нам в дальнейшем
           -- создавать корректный путь к генерируемым файлам.
-          dataFiles <- TH.runIO (walkDirectory "./static/css")
+          dataFiles <- TH.runIO (walkDirectory "./static") -- NOTE
           genData   <- mapM getFileGenData dataFiles
-          TH.clause [] (TH.normalB $ return (createExp genData)) []
+          let dataFiltered = filter (\(file, _, _) ->
+                not $ elem file ["./.static/images/logo.png"]) genData
+          createExp dataFiltered
 
         getFileGenData file =
           let newFilePath = SUtils.replace "./static" "./.static" file
           in do
-            content <- TH.runIO (SUtils.replace "\n" "\\n" <$> readFile file)
-            return (newFilePath, content)
+            TH.runIO $ do
+              content <- BS.readFile file
+              let contentType = case (decodeUtf8' content) of
+                                  Left _  -> BinaryType
+                                  Right _ -> TextType
+              return (newFilePath, content, contentType)
 
-        createExp ((file, content):xs) =
-          -- TODO: Looks very bad -> rewrite via Quasi Quotes.
-          let folder     = dropFileName file
-              createDir' = TH.mkName "System.Directory.createDirectoryIfMissing"
-              bind'      = TH.mkName ">>"
-              writeF'    = TH.mkName "System.IO.writeFile"
-              boolTrue   = TH.mkName "True"
-              replace'   = TH.mkName "Data.String.Utils.replace"
-          -- Трансформируется в:
-          --   createDirectoryIfMissing {folder} >>
-          --     writeFile {file} (replace "\\n" "\n" {content})
-          in TH.InfixE
-               (Just $ TH.AppE
-                 (TH.AppE (TH.VarE createDir') (TH.ConE boolTrue))
-                 (TH.LitE (TH.StringL folder)))
-               (TH.VarE bind')
-               (Just $ (TH.AppE
-                 (TH.AppE (TH.VarE writeF') (TH.LitE (TH.StringL file)))
-                 (TH.AppE
-                   (TH.AppE
-                     (TH.AppE (TH.VarE replace') (TH.LitE (TH.StringL "\\n")))
-                     (TH.LitE (TH.StringL "\n")))
-                   (TH.LitE (TH.StringL content)))))
+        createExp genData' =
+          let exps = flip map genData' (\(f, content, fType) ->
+                     worker fType f content (dropFileName f))
+          in TH.appE [e| sequence |] (TH.listE exps)
+          where
+            worker TextType file' content' folder' =
+              worker_ TextType file' ((replace' . BS.unpack) content') folder'
+            worker BinaryType file' content' folder' =
+              worker_ BinaryType file' ((asStr . BS.unpack) content') folder'
+            worker_ type' file' content' folder' =
+              let content = TH.appE [| BS.pack |] content'
+              in  TH.infixE (Just $ createDirectory' folder')
+                            [e| (>>) |]
+                            (Just $ writeFile' type' file' content)
+            asStr    = (TH.litE . TH.StringL)
+            writeFile' fType' f content' =
+              let writeFun = case fType' of
+                               TextType   -> [e| \x y -> writeFile x $ BS.unpack y |]
+                               BinaryType -> [e| BS.writeFile |]
+              in TH.appE (TH.appE writeFun $ asStr f) content'
+            replace' content'        =
+              TH.appE [e| SUtils.replace "\\n" "\n" |] (asStr content')
+            createDirectory' folder' =
+              TH.appE [e| Dir.createDirectoryIfMissing True |] (asStr folder')
+
+-- | Основная функция, на этапе компиляции создающая
+build :: TH.DecsQ
+build = TH.runIO (createAppDir ".") >> generateRestoring

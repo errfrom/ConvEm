@@ -12,36 +12,30 @@ import qualified Control.Monad                 as Monad  (void)
 import Types.Hierarchy
 import Types.Results
 import Types.Data
+import Types.Elems
 import Main.Login.GUI
-import qualified Main.Login.Logic as Logic (checkEmail
+import qualified Main.Login.Logic as Logic (inpCheck
                                            ,askServerResp)
 import qualified Utils                     (getValue, getElemById
                                            ,removeClass)
 
---------------------------------------------------------------------------------
 
 instance Callable Auth AuthResult where
   call Auth sock (email:passw:_) =
     let loginData = AuthData (BS.pack email) (BS.pack passw)
     in  (Logic.askServerResp sock loginData)
 
---------------------------------------------------------------------------------
-
 instance Checkable Auth AuthResult where
   check _ (email:passw:_) =
     case (worker email passw) of
       []       -> Nothing
       mistakes -> Just (InvalidValues mistakes)
-    where isBlank value = length value == 0
-          checkPassw    = (not . isBlank)
-          checkValue toCheck funCheck res
+    where checkValue toCheck funCheck res
            |funCheck toCheck = []
            |otherwise        = res : []
           worker email' passw' =
-            (checkValue email' Logic.checkEmail InEmailField) ++
-            (checkValue passw' checkPassw InPasswordField)
-
---------------------------------------------------------------------------------
+            (checkValue email' (Logic.inpCheck (InpEmail "")) InEmailField) ++
+            (checkValue passw' (Logic.inpCheck (InpPassword "")) InPasswordField)
 
 instance Manageable Auth AuthResult where
   handle _ sock = do
@@ -80,17 +74,3 @@ instance Manageable Auth AuthResult where
           onFocusRemoveErrClass' inpBox el =
             on Events.focus el $ \_ ->
               mapM_ (flip Utils.removeClass errClass) [ el, inpBox ]
-
---------------------------------------------------------------------------------
-
-instance Form Auth AuthResult where
-  form _ sock = do
-    build "login-form"
-      [ wrap [ add (LblHeader "Авторизация")
-             , add (LblDesc   "Введите ваш E-mail и пароль для продолжения работы.") ]
-      , wrap [ add (InpSimple "E-mail"  ) `as` "inp-email" ]
-      , wrap [ add (InpPassword "Пароль") `as` "inp-passw" ]
-      , add LblInvalid
-      , wrap [ add (BtnImportant "Вперед") `bind` (handle Auth sock)
-             , additional [ add $ BtnLink "Регистрация"
-                          , add $ BtnLink "Забыли пароль?" ]]]

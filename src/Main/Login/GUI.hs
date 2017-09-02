@@ -1,6 +1,7 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Main.Login.GUI
-  ( Concretized(..), ButtonKind(..), InputKind(..), LabelKind(..), ImageKind(..)
-  , switch, bind, as, build, row, wrap, short, additional ) where
+  ( switch, bind, as, build, row, wrap, short, additional ) where
 
 --------------------------------------------------------------------------------
 -- Содержит часто используемые элементы, а также
@@ -8,68 +9,53 @@ module Main.Login.GUI
 -- код, получающийся при написании графических форм.
 --------------------------------------------------------------------------------
 
+import Network.Socket                                      (Socket)
 import Graphics.UI.Threepenny.Core               hiding    (row)
 import qualified Graphics.UI.Threepenny.Elements as Elems
 import qualified Graphics.UI.Threepenny.Events   as Events (click, valueChange)
-import System.IO                                           (FilePath)
-import Network.Socket                                      (Socket)
-import Types.Hierarchy
 import qualified Utils                                     (removeClass
                                                            ,getElemType)
+import Types.Hierarchy
+import Types.Elems
 
 
 --Attr setters------------------------------------------------------------------
 
-setId, setText :: String -> UI Element -> UI Element
+setId, setType, setText :: String -> UI Element -> UI Element
 setId   id'    = set (attr "id")    id'
+setType type'  = set (attr "type")  type'
 setText text'  = set text text'
+
+--Defaults----------------------------------------------------------------------
+
+instance DefaultDecl InputKind  where
+  def _ = handleFilled =<< Elems.input # set (attr "maxlenght") "80"
+                                       # setType "simple"
 
 --Concretized Elements----------------------------------------------------------
 
-data ButtonKind =
-  BtnImportant String
- |BtnLink      String
-
-data InputKind =
-  InpSimple   String
- |InpPassword String
-
-data LabelKind =
-  LblHeader  String
- |LblDesc    String
- |LblInvalid
-
-data ImageKind =
-  Header FilePath
- |Image  FilePath
-
-class Concretized t where
-  add :: t -> UI Element
-
-instance Concretized ButtonKind where
+instance BuildableElem ButtonKind where
   add (BtnImportant text') = Elems.button # setText text'
-                                         #. "btn-important"
+                                          #. "btn-important"
   add (BtnLink text')      = Elems.button # setText text'
-                                         #. "btn-link"
+                                          #. "btn-link"
 
-instance Concretized InputKind where
-  add (InpSimple text')   = handleFilled =<< Elems.input # set (attr "placeholder") text'
-                                                         # set (attr "type") "simple"
-                                                         # set (attr "maxlength") "80"
-  add (InpPassword text') = handleFilled =<< Elems.input # set (attr "placeholder") text'
-                                                         # set (attr "type") "password"
-                                                         # set (attr "maxlength") "80"
+instance BuildableElem InputKind where
+  add i@(InpSimple   text') = def i # set (attr "placeholder") text'
+  add i@(InpEmail    text') = def i # set (attr "placeholder") text'
+  add i@(InpPassword text') = def i # setType "password"
+                                    # set (attr "placeholder") text'
 
-instance Concretized LabelKind where
+instance BuildableElem LabelKind where
   add (LblHeader text')  = Elems.h1  # setText text'
-                                    #.  "hdr-text"
+                                     #.  "hdr-text"
   add (LblDesc text')    = Elems.h2  # setText text'
-                                    #. "form-text"
-  add LblInvalid        = Elems.div # setId "invalid-input-text"
+                                     #. "form-text"
+  add LblInvalid         = Elems.div # setId "invalid-input-text"
 
-instance Concretized ImageKind where
-  add (Image path)  = Elems.img # set (attr "src") ("/static/images/" ++ path)
-  add (Header path) = do
+instance BuildableElem ImageKind where
+  add (Image path)     = Elems.img # set (attr "src") ("/static/images/" ++ path)
+  add (ImgHeader path) = do
     img  <- Elems.img # set (attr "src") ("/static/images/" ++ path)
                       # set (attr "draggable") "false"
     wrapper <- Elems.div #. "hdr-wrapper"
@@ -132,9 +118,11 @@ handleFilled :: Element -> UI Element
 handleFilled inp =
   let font = "14px Roboto"
   in do
-    phText <- callFunction (ffi "$(%1).attr('placeholder')" inp :: JSFunction String)
-    phSize <- getTextWidth phText font
-    on Events.valueChange inp $ \val -> worker val phSize font
+    on Events.valueChange inp $ \val -> do
+      phText <- callFunction (ffi "$(%1).attr('placeholder')" inp :: JSFunction String)
+      phSize <- getTextWidth phText font
+      worker val phSize font
+      on Events.valueChange inp $ \val -> worker val phSize font
     return inp
   where worker val phSize font =
           let maxSize      = 260 - phSize

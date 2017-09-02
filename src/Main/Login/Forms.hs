@@ -1,83 +1,73 @@
-module Main.Login.GUI.Forms {-# DEPRECATED "Will be removed and decentralized soon" #-} where
+{-# OPTIONS_GHC -fno-warn-orphans  #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
---------------------------------------------------------------------------------
--- Содержит все GUI формы, а также осуществляет перемещение между оными.
--- Связывает GUI и Logic.
---------------------------------------------------------------------------------
+module Main.Login.Forms
+  ( initForms ) where
+
+import Graphics.UI.Threepenny.Core hiding    (row)
+import qualified Server.General    as Server (initSocket)
+import Types.General                         (SocketType(..))
+import Types.Hierarchy
+import Types.Results
+import Types.Elems
+import Main.Login.GUI
+import Main.Login.Auth
 
 
-import Graphics.UI.Threepenny.Core             hiding    (row)
-import qualified Graphics.UI.Threepenny.Events as Events (click)
-import Network.Socket                                    (Socket)
-import qualified Server.General                as Server (initServer, initSocket)
-import Types.General                                     (RecStage(..), Stage(..))
-import Types.Server                                      (SocketType(..))
-import Main.Login.GUI.Auth                               (handleAuth)
-import Main.Login.GUI.General
+-- | Инициализирует клиентский сокет и начальную форму.
+-- Последущие формы чередуются функцией switch.
+-- Также позволяет применять оформление одновременно ко
+-- всем формам.
+initForms :: UI Element
+initForms = do
+  sock <- liftIO (Server.initSocket ClientSocket)
+  win  <- askWindow
+  getBody win #+ [ add (ImgHeader "header.png")
+                 , nonfunForm Start sock ]
 
-switch :: Socket -> Stage -> UI Element -> UI Element
-switch sock stage el = el
+instance NonfunForm Start where
+  nonfunForm Start sock = do
+    build "start-form"
+     [ wrap [ add (LblHeader "Приветствуем вас!")
+            , add (LblDesc   "Извольте насладиться ощущением прогрессивного общения.") ]
+     , wrap [ switch sock Auth (add $ BtnImportant "Вперед") ]]
 
-  {- el >>= \el' -> worker el' >> return el'
-    where worker el = on Events.click el $ \_ -> do
-            window <- liftIO (getWindow el)
-            clearWindow window
-            getBody window #+ [ form stage sock ]
+instance Form Auth AuthResult where
+  form Auth sock =
+    build "login-form"
+      [ wrap [ add (LblHeader   "Авторизация")
+             , add (LblDesc     "Введите ваш E-mail и пароль для продолжения работы.") ]
+      , wrap [ add (InpEmail    "E-mail")    `as` "inp-email" ]
+      , wrap [ add (InpPassword "Пароль") `as` "inp-passw" ]
+      , add LblInvalid
+      , wrap [ add (BtnImportant "Вперед") `bind` (handle Auth sock)
+             , additional [ add (BtnLink "Регистрация")
+                          , add (BtnLink "Забыли пароль?") ]]]
 
-          clearWindow window = do
-            [mainDiv] <- getElementsByClassName window "main-div"
-            [center]  <- getElementsByTagName   window "center"
-            mapM_ delete [ mainDiv, center ] -}
+instance NonfunForm Reg where
+  nonfunForm _ sock = do
+    build "reg-form"
+      [ wrap [ add (LblHeader "Регистрация")
+             , add (LblDesc   "Введите необходимые данные для начала работы.") ]
+      , wrap [  add       (InpSimple   "E-mail"           ) `as` "inp-email"   ]
+      , row (short $ (add (InpSimple   "Имя"              ) `as` "inp-name"   ))
+            (short $ (add (InpSimple   "Фамилия"          ) `as` "inp-surname"))
+      , row (short $ (add (InpPassword "Пароль"           ) `as` "inp-passw"  ))
+            (short $ (add (InpPassword "Повторите пароль" ) `as` "inp-repeat" ))
+      , add LblInvalid
+      , wrap [ add (BtnImportant "Готово") `bind` return()
+             , additional [ add $ BtnLink "Вернуться назад"
+                          , add (BtnLink "Синхронизация") ]]]
 
-type Form = Socket -> UI Element
-startForm, authForm, regForm, recoveryForm_Email :: Form
 
---Начальное окно----------------------------------------------------------------
-startForm sock = do
-  window <- askWindow
-  build "start-form"
-   [ wrap [ add (LblHeader "Приветствуем вас!")
-          , add (LblDesc   "Извольте насладиться ощущением прогрессивного общения.") ]
-   , wrap [ switch sock Auth (add $ BtnImportant "Вперед") ]]
-
---Авторизация-------------------------------------------------------------------
-authForm sock = do
-  window <- askWindow
-  build "login-form"
-    [ wrap [ add (LblHeader "Авторизация")
-           , add (LblDesc   "Введите ваш E-mail и пароль для продолжения работы.") ]
-    , wrap [ add (InpSimple "E-mail"  ) `as` "inp-email" ]
-    , wrap [ add (InpPassword "Пароль") `as` "inp-passw" ]
-    , add LblInvalid
-    , wrap [ add (BtnImportant "Вперед") `bind` (handleAuth sock)
-           , additional [ switch sock Reg (add $ BtnLink "Регистрация")
-                        , switch sock (Recovery SendingEmail)
-                                      (add $ BtnLink "Забыли пароль?") ]]]
-
---Регистрация----*---------------------------------------------------------------
-regForm sock = do
-  window <- askWindow
-  build "reg-form"
-    [ wrap [ add (LblHeader "Регистрация")
-           , add (LblDesc   "Введите необходимые данные для начала работы.") ]
-    , wrap [  add       (InpSimple "E-mail"            ) `as` "inp-email"   ]
-    , row (short $ (add (InpSimple "Имя"               ) `as` "inp-name"))
-          (short $ (add (InpSimple "Фамилия"           ) `as` "inp-surname"))
-    , row (short $ (add (InpPassword "Пароль"          ) `as` "inp-passw"))
-          (short $ (add (InpPassword "Повторите пароль") `as` "inp-repeat"))
-    , add LblInvalid
-    , wrap [ add (BtnImportant "Готово") `bind` return()
-           , additional [ switch sock Auth (add $ BtnLink "Вернуться назад")
-                        , add (BtnLink "Синхронизация") ]]]
-
---Восстановление пароля(Email)--------------------------------------------------
-recoveryForm_Email sock = do
-  window <- askWindow
-  build "recovery-form"
-    [ wrap [ add (LblHeader "Восстановление пароля")
-           , add (LblDesc "На ваш E-mail будет отправлен ключ для смены пароля.") ]
-    , wrap [ add (InpSimple "E-mail") `as` "inp-email" ]
-    , add LblInvalid
-    , wrap [ add (BtnImportant "Отправить") `bind` return ()
-           , additional [ switch sock Auth (add $ BtnLink "Вернуться назад")
-                        , add (BtnLink "Не пришел ключ?") ]]]
+instance NonfunForm Recovery where
+  nonfunForm (Recovery SendingEmail) sock = do
+    window <- askWindow
+    build "recovery-form"
+      [ wrap [ add (LblHeader "Восстановление пароля")
+             , add (LblDesc "На ваш E-mail будет отправлен ключ для смены пароля.") ]
+      , wrap [ add (InpSimple "E-mail") `as` "inp-email" ]
+      , add LblInvalid
+      , wrap [ add (BtnImportant "Отправить") `bind` return ()
+             , additional [ add $ BtnLink "Вернуться назад"
+                          , add $ BtnLink "Не пришел ключ?" ]]]

@@ -35,7 +35,8 @@ hasClass :: Element -> String -> UI Bool
 hasClass el class' =
   let jsPattern = printf ".hasClass('%s')" class'
   in callFunction (flip ffi el $ "$(%1)" ++ jsPattern) >>= (return . jsBool)
-  where jsBool val
+  where jsBool :: String -> Bool
+        jsBool val
          | val == "true" = True
          | otherwise     = False
 

@@ -42,7 +42,7 @@ import qualified Graphics.UI.Gtk.WebKit.WebView            as WV
   (webViewNew, webViewLoadUri)
 --My----------------------------------------------------------------------------
 import qualified Server.General as Server  (initServer)
-import Main.Login.Manager       as Manager (initForms)
+import Main.Login.Forms         as Forms   (initForms)
 --------------------------------------------------------------------------------
 
 -- | Основная функция, запускающая
@@ -60,7 +60,7 @@ initInterface =
 -- декорированный функцией setup
 -- при помощи Threepenny-UI.
 startLocalServer :: Int -> IO()
-startLocalServer portId= do
+startLocalServer portId = do
   currentDir <- Dir.getCurrentDirectory
   let pathStatic = currentDir ++ ("/.static/")
       config = UI.defaultConfig { UI.jsPort   = Just portId
@@ -70,7 +70,7 @@ startLocalServer portId= do
           _ <- return window # UI.set UI.title "DDChat"
           Elems.addStyleSheet window "fonts.css"
           Elems.addStyleSheet window "login.css"
-          Manager.initForms
+          Forms.initForms
 
 -- | Инициализирует GTK GUI,
 -- выступающий в роли браузера для описанного

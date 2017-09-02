@@ -4,7 +4,8 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module Main.Login.Logic
-  ( checkEmail, askServerResp ) where
+  ( inpCheck, transformValue
+  , askServerResp ) where
 
 --------------------------------------------------------------------------------
 -- Функции, часто используемые в описании логики
@@ -12,26 +13,43 @@ module Main.Login.Logic
 --------------------------------------------------------------------------------
 
 import Network.Socket                                (Socket)
+import Crypto.BCrypt                                 (HashingPolicy(..))
+import Data.ByteString                               (ByteString)
+import Data.Word8                                    (_space)
+import Data.Maybe                                    (fromJust)
 import qualified Network.Socket.ByteString as SockBS (send, recv)
 import qualified Data.ByteString           as BS     (singleton, append)
-import Data.Word8                                    (_space)
-import Types.Data                                    (UserData(..), RecoveryData'(..))
-import Types.Results                                 (Result)
-import Types.General                                 (FlagAssociated(..)
-                                                     ,RequestType(..))
+import qualified Crypto.BCrypt             as BCrypt (hashPasswordUsingPolicy
+                                                     ,defaultHashAlgorithm)
+
+import Types.Data    (UserData(..), RecoveryData'(..))
+import Types.Results (Result)
+import Types.Elems   (InputKind(..))
+import Types.General (FlagAssociated(..), RequestType(..))
 
 
--- | Проверяет, может ли существовать подобный email.
-checkEmail :: String -> Bool
-checkEmail email
+-- | Проверяет, введены ли корректные данные в поле определенного типа.
+inpCheck :: InputKind -> String -> Bool
+inpCheck (InpPassword _) passw
+ |length passw == 0 = False
+ |otherwise         = True
+inpCheck (InpEmail _) email
  |isBlank email          = False
  |(not . elem '@') email = False -- Нет '@' в строке
  |(length . flip filter email) (== '@') /= 1 = False -- Несколько '@'
  |(not . elem '.' . afterEmailSymbol) email  = False -- Нет '.' после '@'
  |last email == '.' = False -- Заканчивается на '.'
  |otherwise         = True
- where afterEmailSymbol email' = (tail . snd . flip break email') (== '@')
-       isBlank value          = length value == 0
+  where afterEmailSymbol email' = (tail . snd . flip break email') (== '@')
+        isBlank value          = length value == 0
+
+-- | Определяет, следует ли предварительно изменять данные
+-- перед отправкой на сервер и каким способом.
+transformValue :: InputKind -> ByteString -> IO ByteString
+transformValue (InpPassword _)  passw = do
+  mHashed <- BCrypt.hashPasswordUsingPolicy
+               (HashingPolicy 11 BCrypt.defaultHashAlgorithm) passw
+  return (fromJust mHashed)
 
 -- | Принимает входные данные какого-либо пользовательского действия,
 -- ассоциирует с этим действия флаг и отсылает на сервер флаг, а затем

@@ -20,15 +20,18 @@ library
   other-modules:       Utils
                      , Main.Login.GUI
                      , Main.Login.Logic
-                     , Main.Login.Manager
+                     , Main.Login.Forms
                      , Main.Login.Auth
+                     , Main.Settings.Header
                      , Server.General
                      , Server.Login.Auth
                      , Templates.GenFlagAssociated
+                     , Templates.Inliner
                      , Types.Data
                      , Types.General
                      , Types.Hierarchy
                      , Types.Results
+                     , Types.Elems
   build-depends:       base >= 4.7 && < 5
                      , threepenny-gui
                      , gtk
@@ -49,6 +52,7 @@ library
                      , regex-posix
                      , text
                      , MissingH
+                     , data-default
   default-language:    Haskell2010
 
 executable DDChat-exe

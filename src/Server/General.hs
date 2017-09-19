@@ -2,7 +2,8 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module Server.General
-  ( initServer, handleConn, initSocket ) where
+  (SocketType(..)
+  ,initServer, handleConn, initSocket) where
 
 --------------------------------------------------------------------------------
 -- Содержит частоиспользуемые в других модулях Server/ функции.
@@ -10,26 +11,22 @@ module Server.General
 -- писать меньше шаблонного кода.
 --------------------------------------------------------------------------------
 
-import qualified Network.Socket     as Sock
+import Network.Socket                       (Socket)
 import Network.Socket.ByteString            (recv, send)
-import qualified Control.Concurrent as Conc (forkIO)
 import Control.Monad                        (forever)
-import Types.General                        (FlagAssociated(..)
-                                            ,SocketType(..), RequestType(..))
-import Server.Login.Auth                    (handleUser)
---import Server.Login.Recovery                (handleReceiver)
+import Types.General                        (FlagAssociated(..), Stage(..))
+import Server.Login.Auth                    (handleAuthorization)
+import qualified Network.Socket     as Sock
+import qualified Control.Concurrent as Conc (forkIO)
 
+data SocketType = ClientSocket | ServerSocket
 
--- | Инициализирует сокет в зависимости
--- от переданного типа.
-initSocket :: SocketType -> IO Sock.Socket
+initSocket :: SocketType -> IO Socket
 initSocket sockType =
   let tcpPrtcl  = 6
-      localhost = Sock.tupleToHostAddress (127, 0, 0, 1) -- NOTE: Временное решение
+      localhost = Sock.tupleToHostAddress (127, 0, 0, 1)
       portNum   = 50000 -- TODO: Дополнительная проверка доступности номера порта.
-      maxQueue  = 80 -- Сколько может находится соединений в очереди.
-                     -- Предполагается, что операции происходят достаточно
-                     -- быстро, т.к. делегируются другим потокам.
+      maxQueue  = 80
       socket'   = Sock.socket Sock.AF_INET Sock.Stream tcpPrtcl
       sockAddr  = Sock.SockAddrInet portNum localhost
   in case sockType of
@@ -60,12 +57,9 @@ initServer = do
 -- делегирует работу определенной функции,
 -- знающей о контексте непосредственной обработки.
 -- При выполнении, установленное соединение закрывается.
-handleConn :: Sock.Socket -> Sock.Socket -> IO ()
-handleConn sock conn = do
-  flag <- recv conn 1
-  case (toConstr flag :: RequestType) of
-    Auth     -> handleUser conn     >>= answerClient
---    Recovery -> handleReceiver conn >>= answerClient
-    Exit     -> Sock.close conn >>  Sock.close sock
-    _        -> error "Undefined flag."
+handleConn :: Socket -> Socket -> IO ()
+handleConn _ conn = do
+  flagStage <- recv conn 1
+  case (toConstr flagStage :: Stage) of
+    Auth -> handleAuthorization conn >>= answerClient
   where answerClient res = send conn res >> return ()

@@ -1,271 +1,197 @@
-/** GENERAL *******************************************************************/
+/**
+background : #f9fafc (nearly white)
+hdr border : #F5F5F5 (nearly white)
+border     : #DCDCDC (very light gray)
+text       : #808080 (normal gray)
+button     : #666666 (dark gray)
+input      : #565656 (nearly black)
+active el  : #F87F6E (soft red)
+**/
 
-body
-{
-  background-color : white;
-  overflow-x       : hidden;
-}
 
 *
 {
+  overflow-x             : hidden;
   outline                : none;
-  -webkit-font-smoothing : antialiased;
+  -webkit-font-smoothing : subpixel-antialiased;
+  -webkit-user-select    : none;
+  -webkit-user-drag      : none;
 }
 
-@-webkit-keyframes fadeIn
+/** HEADER **/
+
+#action-header
 {
-  from { opacity : 0; } to { opacity : 1; }
+  position      : absolute;
+  top           : 0;
+  left          : 0;
+  width         : 100%;
+  height        : 150px;
+  border-bottom : 1px solid #F5F5F5;
 }
 
-/** INPUT *********************************************************************/
+#action-header div
+{
+  width       : 120px;
+  height      : 56px;
+  margin      : 0 auto;
+  margin-top  : calc(150px/2 - 56px/2);
+  color       : #808080;
+  font-family : 'Roboto', sans-serif;
+  font-weight : 300;
+  font-size   : 40px;
+}
+
+/** FORM **/
+
+.form
+{
+  position : absolute;
+  width    : 440px;
+  left     : calc(50% - 440px/2);
+}
+
+#auth-form
+{
+  height : 160px;
+  top    : calc(50% - 160px/2 + 75px - 30px);
+}
+
+/** INPUT **/
+
+#inputs
+{
+  width    : 200px;
+  height   : 100px;
+  float    : left;
+}
+
+#inputs #inp-passw
+{
+  margin-top : 10px;
+}
 
 input
 {
-  -webkit-transition : border-bottom-color 0.5s;
-
-  width       : 260px;
-  height      : 40px;
-
-  border-radius       : 0px;
-  border-width        : 0px;
-  border-bottom-width : 1px;
-  border-bottom-color : #DCDCDC; /* light gray */
-
-  font-family : 'Roboto', sans-serif;
-  font-weight : 400;
-  font-size   : 14px;
-  color       : #565656; /* dark gray */
-
-}
-
-input.filled::-webkit-input-placeholder
-{
-  -webkit-transition : opacity 0.5s;
-  opacity : 0;
-}
-
-input:focus
-{
-  border-bottom-width : 1.5px;
-  border-bottom-color : #F0BB67; /* yellow */
+  -webkit-user-select : all;
+  background-color    : white;
+  height              : 40px;
+  width               : 190px;
+  border              : 1px solid #DCDCDC;
+  border-radius       : 2px;
+  font-family         : 'Roboto', sans-serif;
+  font-weight         : 400;
+  font-size           : 14px;
+  color               : #565656;
+  text-indent         : 10px;
 }
 
 input::-webkit-input-placeholder
 {
+  color : #808080;
+}
 
+/** INTERACTION AREA **/
+
+#interact-area
+{
+  height     : 70px;
+  width      : 220px;
+  float      : right;
+  margin-top : 15px;
+}
+
+#hint-text
+{
+  height        : 30px;
+  margin        : 0 auto;
+  border-bottom : 1px solid #F5F5F5;
+  color         : #808080;
+  font-family   : 'Roboto', sans-serif;
+  font-weight   : 400;
+  font-size     : 16px;
+  text-align    : center;
+}
+
+#actions
+{
+  height : 30px;
+  width  : 136px;
+  margin : 0 auto;
+  margin-top : 5px;
+}
+
+/** BUTTONS **/
+
+.btn-link
+{
+  -webkit-transition : color 0.4s;
+  background         : none;
+  border             : none;
+  padding-left       : 2px;
+  font-size          : 14px;
+  color              : #808080;
+  font-family        : 'Roboto', sans-serif;
+  font-weight        : 500;
+  font-size          : 14px;
+}
+
+.btn-link:hover
+{
+  color : #F87F6E;
+}
+
+/** MISTAKES HANDLE **/
+
+#mistake-box
+{
   -webkit-transition : opacity 0.5s;
 
-  opacity    : 1;
-  text-align : left;
+  margin-top  : 15px;
+  height      : 40px;
+  text-align  : center;
 
-  color : #808080; /* light gray */
-}
-
-input:focus::-webkit-input-placeholder
-{
-  text-align : right;
-  visibility : visible !important;
-}
-
-/* Поле ввода подсвечивается красным цветом если возникает ошибка. */
-input.with-error
-{
-  -webkit-transition : all 0.5s;
-
-  border-bottom-width : 1.5px;
-  border-bottom-color : #F26065; /* soft red */
-}
-
-/* Поле ввода меньшей длины. Помещается с таким же полем в одну строку. */
-input.short
-{
-  width : 125px;
-}
-
-input.short::-webkit-input-placeholder
-{
-  -webkit-transition : opacity 0s;
-}
-
-input.short:focus::-webkit-input-placeholder
-{
-  text-align : left;
-  opacity    : 0;
-}
-
-/** BUTTON ********************************************************************/
-
-button.btn-link
-{
-  -webkit-transition : all 0.5s;
-
-  background-color : white;
-  color            : #808080; /* light gray */
-
-  border-width : 0px;
-
-  font-family     : 'Roboto', sans-serif;
-  font-weight     : 500;
-  font-size       : 13px;
-}
-
-button.btn-link:hover
-{
-  color : #565656; /* dark gray */
-}
-
-button.btn-important
-{
-  -webkit-transition         : all 0.2s;
-
-  background-color           : #F0BB67; /* yellow */
-  -webkit-animation-name     : fadeIn;
-  -webkit-animation-duration : 0.7s;
-  color                      : white;
-  width                      : 260px;
-  height                     : 50px;
-  border-width               : 0px;
-  font-family                : 'Roboto', sans-serif;
-  font-size                  : 16px;
-  font-weight                : 500;
-  border-radius              : 3px;
-}
-
-button.btn-important:hover
-{
-
-  background : #FFD072; /* light yellow */
-}
-
-button.btn-important:active
-{
-  background-color : #EDBA6A; /* dark yellow */
-}
-
-/** DIV ***********************************************************************/
-
-div
-{
-  padding-top         : 10px;
-  -webkit-user-select : none;
-}
-
-div.row
-{
-  width            : 260px;
-  height           : 43px;
-}
-
-div.row div
-{
-  padding-top : 0px;
-}
-
-div.row div:first-child
-{
-  float : left;
-}
-
-div.row div:last-child
-{
-  float : right;
-}
-
-.additional-btns
-{
-  text-align : center;
-  margin     : auto;
-  padding-top : 0px;
-}
-
-.main-div
-{
-  width               : 260px;
-  margin              : auto;
-  position            : absolute;
-  left                : 0;
-  right               : 0;
-  bottom              : 0;
-  top                 : 130px; /* Из-за размера header. */
-  text-align          : left;
-
-}
-
-#login-form.main-div
-{
-  height : 286px;
-}
-
-#recovery-form.main-div
-{
-  height : 233px;
-}
-
-#reg-form.main-div
-{
-  height : 339px;
-}
-
-#start-form.main-div
-{
-  height : 160px;
-}
-
-/** TEXT BOXES ****************************************************************/
-
-#invalid-input-text
-{
-  opacity     : 0;
-  height      : 0px;
-  color       : #F26065; /* soft red */
-  text-align  : left;
-  font-size   : 14px;
-  font-weight : 400;
+  color       : #808080;
   font-family : 'Roboto', sans-serif;
+  font-weight : 400;
+  font-size   : 16px;
+
+  opacity     : 0;
 }
 
-#invalid-input-text.with-error
+#mistake-box.show-mistake
 {
-  height  : 20px;
   opacity : 1;
 }
 
-.hdr-text
+#mistake-msg
 {
-  font-family : 'Roboto', sans-serif;
-  font-size   : 17px;
-  font-weight : 500;
-  color       : #565656; /* dark gray */
+  opacity : 1;
 }
 
-.form-text
+#mistake-msg
 {
-  font-family : 'Roboto', sans-serif;
-  font-size   : 14px;
-  font-weight : 400;
-  color       : #808080; /* light gray */
+  overflow : hidden;
 }
 
-/** IMAGES ********************************************************************/
-
-img
+#mistake-msg:before,
+#mistake-msg:after
 {
-  margin : auto;
+  content        : '';
+  display        : inline-block;
+  vertical-align : middle;
+  box-sizing     : border-box;
+  width          : 100%;
+  height         : 1px;
+  background     : #F5F5F5;
 }
 
-.hdr-wrapper
+#mistake-msg:before
 {
-  position : relative;
-  margin : 0 auto;
-  width  : 333px;
+  margin-left: -100%;
 }
 
-.header
+#mistake-msg:after
 {
-  position : absolute;
-  width : 100%;
-  float : left;
-  top   : 0;
-  left  : 0;
-  background-color : #F0BB67;
+  margin-right : -100%;
 }

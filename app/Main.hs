@@ -1,13 +1,6 @@
-{-# LANGUAGE TemplateHaskell, OverloadedStrings #-}
-
 module Main where
 
-import qualified Init  (initInterface)
-import Templates.Build (build)
-
-$(build)
+import Init
 
 main :: IO ()
-main = do
-  restoreStatic -- см. Templates.Build.generateRestoring
-  Init.initInterface
+main = initInterface

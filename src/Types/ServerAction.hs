@@ -28,8 +28,9 @@ serverRequest stage sock actionData = do
 
 -- Action Interface ------------------------------------------------------------
 
-class ServerActionData d where
+class ServerActionData d where -- TODO: С помощью getFields сделать стандартную имплементацию.
   asSingleBS :: d -> ByteString
+  validate   :: d -> Bool
 
 class (FlagAssociated r) => ServerActionResult r where
 

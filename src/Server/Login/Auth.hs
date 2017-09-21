@@ -21,12 +21,10 @@ handleAuthorization conn = do
   let email:passw:_ = BS.split _space data_
   mPasswHash <- getHashedPassword email
   let res = case mPasswHash of
-              Nothing -> AuthNonexistentAccount
-              Just ph -> validatePassword ph passw
+              Nothing -> AuthInvalidData
+              Just ph -> if (Crypt.validatePassword ph passw)
+                           then AuthCorrectData else AuthInvalidData
   return (toFlag res)
-  where validatePassword ph passw
-         |Crypt.validatePassword ph passw == True = AuthCorrectPassword
-         |otherwise = AuthIncorrectPassword
 
 -- Получает хеш пароля по указанному значению
 -- поля email. Если пользователь отсутствует в базе,
@@ -35,7 +33,7 @@ getHashedPassword :: ByteString -> IO (Maybe ByteString)
 getHashedPassword email =
   let query = "SELECT USERS_PASSWORD FROM USERS WHERE USER_EMAIL = ?"
   in do
-    conn <- MySql.connect MySql.defaultConnectInfo 
+    conn <- MySql.connect MySql.defaultConnectInfo
     sqlResult <- MySql.query conn query (Only email) :: IO [Only ByteString]
     return $ case sqlResult of
                [] -> Nothing

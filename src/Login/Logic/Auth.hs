@@ -14,7 +14,7 @@ import Graphics.UI.Threepenny.Core
 import Graphics.UI.Threepenny.Events
 import Control.Monad.Reader            (Reader, ask)
 import Network.Socket                  (Socket)
-import Data.ByteString.Char8           (ByteString, pack)
+import Data.ByteString.Char8           (ByteString, pack, unpack)
 import Data.Word8                      (_space)
 import Data.Monoid                     ((<>))
 import Crypto.BCrypt                   (HashingPolicy(..))
@@ -28,32 +28,27 @@ import qualified Types.ServerAction as Action (serverRequest)
 import qualified Crypto.BCrypt      as BCrypt (hashPasswordUsingPolicy
                                               ,defaultHashAlgorithm)
 
+-- Auth Data Desc --------------------------------------------------------------
+
 type OpenPassword   = ByteString
 type HashedPassword = ByteString
 
--- Auth Data Desc --------------------------------------------------------------
-
-data AuthData a =
+data AuthData =
   AuthData { authEmail :: ByteString
-           , authPassw :: a }
+           , authPassw :: ByteString }
 
-instance ServerActionData (AuthData HashedPassword) where
+instance ServerActionData AuthData where
   asSingleBS AuthData{..} = authEmail <> BS.singleton _space <> authPassw
+  validate   AuthData{..} = checkEmail authEmail && checkPassw (unpack authPassw)
 
 -- Auth Result Desc ------------------------------------------------------------
 
-data AuthResult =
-  AuthCorrectPassword
- |AuthIncorrectPassword
- |AuthNonexistentAccount
- |AuthBlockedAccount
+data AuthResult = AuthCorrectData | AuthInvalidData
 $(deriveFlagAssociated [ "AuthResult" ])
 
 instance Show AuthResult where
-  show AuthCorrectPassword    = "AuthCorrectPassword"
-  show AuthIncorrectPassword  = "The entered password is incorrect."
-  show AuthNonexistentAccount = "This account does not exist."
-  show AuthBlockedAccount     = "This account has been blocked."
+  show AuthCorrectData = "Sign In"
+  show AuthInvalidData = "Please, enter the valid data and try again."
 
 instance ServerActionResult AuthResult where
 
@@ -66,10 +61,12 @@ hashPassw passw = do
   where hashCost = 11
         hashingPolicy = HashingPolicy hashCost BCrypt.defaultHashAlgorithm
 
-instance ServerAction (AuthData OpenPassword) AuthResult where
-  runServerAction sock aData@AuthData{..} = do
-    hashedPassw <- hashPassw authPassw
-    Action.serverRequest Auth sock (aData { authPassw = hashedPassw })
+instance ServerAction AuthData AuthResult where
+  runServerAction sock aData@AuthData{..}
+   |validate aData = do
+      hashedPassw <- hashPassw authPassw
+      Action.serverRequest Auth sock (aData { authPassw = hashedPassw })
+   |otherwise = return AuthInvalidData
 
 -- GUI Represantation ----------------------------------------------------------
 
@@ -82,29 +79,29 @@ authForm = do
           in do
             body <- askWindow >>= getBody
             (inpEmail:inpPassw:_) <- mapM elCalled ["inp-email", "inp-passw"]
+            (errBox:errMsg:_)     <- mapM elCalled ["action-header", "hdr-text"]
             on keyup body $ \keyCode ->
               if (keyCode == enterKeyCode)
-                then authRequest sock inpEmail inpPassw
+                then do
+                  email <- fmap pack (getValue inpEmail)
+                  passw <- getValue inpPassw
+                  makeAuthRequest sock email passw errBox errMsg
                 else return ()
+            mapM_ (\inp -> on focus inp $ \_ -> hideError errBox errMsg) [inpEmail, inpPassw]
 
-        classMistakeShow = "show-mistake"
-        putMistake mistakeBox mistakeMsg mistake = do
-          addClass mistakeBox classMistakeShow
-          element mistakeMsg # set text mistake
-          return ()
-        hideMistake mistakeBox = removeClass mistakeBox classMistakeShow
+        interactErrShow errBox errMsg funClass errText =
+          let classErrShow = "as-error-container"
+          in funClass errBox classErrShow >> element errMsg # set text errText >> return ()
+        putError errBox errMsg =
+          interactErrShow errBox errMsg addClass (show AuthInvalidData)
+        hideError errBox errMsg =
+          interactErrShow errBox errMsg removeClass (show AuthCorrectData)
 
-        authRequest sock inpEmail inpPassw = -- TODO : refactor
-          let classMistakeShow = "show-mistake"
+        -- Пытается отправить запрос серверу на основе полученных данных.
+        makeAuthRequest sock email passw errBox errMsg =
+          let authData = AuthData email (pack passw)
           in do
-            (mistakeBox:mistakeMsg:_) <- mapM elCalled ["mistake-box", "mistake-msg"]
-            email      <- fmap pack (getValue inpEmail)
-            passw      <- getValue inpPassw
-            if (checkEmail email && checkPassw passw)
-              then do
-                let authData = AuthData email (pack passw)
-                requestResult <- liftIO (runServerAction sock authData)
-                case requestResult of
-                  AuthCorrectPassword -> hideMistake mistakeBox
-                  _ -> putMistake mistakeBox mistakeMsg (show requestResult)
-              else putMistake mistakeBox mistakeMsg "Please, input the correct data."
+            requestResult <- liftIO (runServerAction sock authData)
+            case requestResult of
+              AuthCorrectData -> return ()
+              _               -> putError errBox errMsg

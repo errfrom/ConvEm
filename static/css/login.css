@@ -18,6 +18,8 @@
 
 #auth-form
 {
+
+  -webkit-transition : top 0.3s, left 0.3s;
   height : 161px;
   top    : calc(50% - 161px/2);
 }
@@ -30,7 +32,8 @@
 
 #action-header
 {
-  -webkit-transition : border-bottom 0.3s;
+  -webkit-transition : border-bottom 0.3s, width 0.3s;
+  width              : 440px;
   height             : 40px;
   border-bottom      : 1px solid rgba(0, 0, 0, 0.08);
   text-align         : center;
@@ -72,7 +75,7 @@
 
 input
 {
-  -webkit-transition  : border-color 0.15s;
+  -webkit-transition  : border-color 0.15s, width 0s;
   -webkit-user-select : all;
   height              : 39px;
   width               : 219px;
@@ -100,9 +103,9 @@ input:focus
 
 #interact-area
 {
-  float  : right;
-  width  : 200px;
-  height : 90px;
+  float      : right;
+  width      : 200px;
+  height     : 90px;
 }
 
 .hint-text
@@ -122,8 +125,8 @@ input:focus
 {
   margin     : 0 auto;
   width      : 157px;
+  height     : 20px;
   margin-top : 10px;
-
 }
 
 .btn-link
@@ -136,9 +139,33 @@ input:focus
   font-family        : 'Roboto', sans-serif;
   font-weight        : 500;
   font-size          : 14px;
+  cursor             : pointer;
 }
 
 .btn-link:hover
 {
-  color : #34C0DE; /* soft blue */
+  color : #0971B2; /* soft blue */
+}
+
+/** MEDIA (Lack of width) **/
+
+@media screen and (max-width : 600px)
+{
+  #auth-form {
+    width  : 300px;
+    height : 196px;
+    top    : calc(50% - 196px/2);
+    left   : calc(50% - 300px/2);
+  }
+  #action-header { width : 300px; }
+  input          { width : 300px; -webkit-transition : width 0.3s; }
+  .hint-text     { height : 0; visibility : hidden; }
+  #interact-area {
+    position     : absolute;
+    margin-top   : 95px;
+    padding-left : 5px;
+    height       : 30px;
+    width        : 300px;
+    float        : left;
+  }
 }

@@ -11,10 +11,11 @@ module Server.General
 -- писать меньше шаблонного кода.
 --------------------------------------------------------------------------------
 
+import Data.Proxy                           (Proxy(..))
 import Network.Socket                       (Socket)
 import Network.Socket.ByteString            (recv, send)
 import Control.Monad                        (forever)
-import Types.General                        (FlagAssociated(..), Stage(..))
+import Types.General                        (Stage(..), flagAsConstr)
 import Server.Login.Auth                    (handleAuthorization)
 import qualified Network.Socket     as Sock
 import qualified Control.Concurrent as Conc (forkIO)
@@ -60,6 +61,6 @@ initServer = do
 handleConn :: Socket -> Socket -> IO ()
 handleConn _ conn = do
   flagStage <- recv conn 1
-  case (toConstr flagStage :: Stage) of
+  case (flagAsConstr flagStage (Proxy :: Proxy Stage)) of
     Auth -> handleAuthorization conn >>= answerClient
   where answerClient res = send conn res >> return ()

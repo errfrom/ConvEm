@@ -1,10 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE AutoDeriveTypeable    #-}
+{-# LANGUAGE DeriveFoldable        #-}
 
 module Login.Logic.Auth
   (AuthData(..), AuthResult(..)
@@ -17,9 +18,11 @@ import Network.Socket                  (Socket)
 import Data.ByteString.Char8           (ByteString, pack, unpack)
 import Data.Word8                      (_space)
 import Data.Monoid                     ((<>))
+import Data.Data                       (Data)
+import Data.Default
+import Data.Proxy                      (Proxy(..))
 import Crypto.BCrypt                   (HashingPolicy(..))
-import Templates.GenFlagAssociated     (deriveFlagAssociated)
-import Types.General                   (FlagAssociated(..), Stage(Auth))
+import Types.General                   (Stage(Auth))
 import Types.ServerAction       hiding (serverRequest)
 import Login.Logic.General             (checkEmail, checkPassw)
 import GUI                      hiding (on)
@@ -33,18 +36,21 @@ import qualified Crypto.BCrypt      as BCrypt (hashPasswordUsingPolicy
 type OpenPassword   = ByteString
 type HashedPassword = ByteString
 
-data AuthData =
-  AuthData { authEmail :: ByteString
-           , authPassw :: ByteString }
+data AuthData a =
+  AuthData { authEmail :: a
+           , authPassw :: a }
+  deriving (Foldable)
 
-instance ServerActionData AuthData where
-  asSingleBS AuthData{..} = authEmail <> BS.singleton _space <> authPassw
-  validate   AuthData{..} = checkEmail authEmail && checkPassw (unpack authPassw)
+instance ServerActionData (AuthData ByteString) where
+  validate AuthData{..} = checkEmail authEmail && checkPassw (unpack authPassw)
 
 -- Auth Result Desc ------------------------------------------------------------
 
 data AuthResult = AuthCorrectData | AuthInvalidData
-$(deriveFlagAssociated [ "AuthResult" ])
+  deriving (Data)
+
+instance Default AuthResult where
+  def = AuthInvalidData
 
 instance Show AuthResult where
   show AuthCorrectData = "Sign In"
@@ -61,11 +67,11 @@ hashPassw passw = do
   where hashCost = 11
         hashingPolicy = HashingPolicy hashCost BCrypt.defaultHashAlgorithm
 
-instance ServerAction AuthData AuthResult where
+instance ServerAction (AuthData ByteString) AuthResult where
   runServerAction sock aData@AuthData{..}
    |validate aData = do
       hashedPassw <- hashPassw authPassw
-      Action.serverRequest Auth sock (aData { authPassw = hashedPassw })
+      Action.serverRequest Auth sock (aData { authPassw = hashedPassw }) (Proxy :: Proxy AuthResult)
    |otherwise = return AuthInvalidData
 
 -- GUI Represantation ----------------------------------------------------------

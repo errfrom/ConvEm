@@ -73,7 +73,7 @@ initGtk portId =
     widgetShowAll window
 
   where setSizeSettings window =
-          let minSize = (615, 520) :: (Int, Int)
+          let minSize = (435, 515) :: (Int, Int)
               defSize = 700
           in do
             Attrs.set window [ windowDefaultWidth  := defSize

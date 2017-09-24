@@ -9,7 +9,7 @@ import Data.ByteString           (ByteString)
 import Data.Word8                (_space)
 import Database.MySQL.Simple     (Only(..))
 import Login.Logic.Auth          (AuthResult(..))
-import Types.General             (FlagAssociated(..))
+import Types.General             (constrAsFlag)
 import qualified Data.ByteString       as BS    (split)
 import qualified Crypto.BCrypt         as Crypt (validatePassword)
 import qualified Database.MySQL.Simple as MySql
@@ -24,7 +24,7 @@ handleAuthorization conn = do
               Nothing -> AuthInvalidData
               Just ph -> if (Crypt.validatePassword ph passw)
                            then AuthCorrectData else AuthInvalidData
-  return (toFlag res)
+  return (constrAsFlag res)
 
 -- Получает хеш пароля по указанному значению
 -- поля email. Если пользователь отсутствует в базе,

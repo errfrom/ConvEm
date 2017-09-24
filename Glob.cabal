@@ -20,7 +20,6 @@ library
                      , Login.Logic.General
                      , Types.General
                      , Types.ServerAction
-                     , Templates.GenFlagAssociated
                      , Templates.Inline
                      , Server.General
                      , Server.Login.Auth
@@ -43,6 +42,7 @@ library
                      , bcrypt
                      , mysql-simple
                      , mtl
+                     , data-default
   default-language:    Haskell2010
 
 executable Glob-exe

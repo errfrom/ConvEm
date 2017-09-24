@@ -4,7 +4,7 @@ synopsis:            Haskell based chat-app.
 description:         Multiplatform, fast, secure and intuitive chat-app.
 homepage:            https://github.com/errfrom/Glob#readme
 license:             GPL-3.0
-license-file:        LICENSE.txt
+license-file:        LICENSE
 author:              Ivanov Dmitry
 maintainer:          errfrom@yandex.ru
 copyright:           2017 Glob

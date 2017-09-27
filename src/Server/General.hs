@@ -15,7 +15,8 @@ import Data.Proxy                           (Proxy(..))
 import Network.Socket                       (Socket)
 import Network.Socket.ByteString            (recv, send)
 import Control.Monad                        (forever)
-import Types.General                        (Stage(..), flagAsConstr)
+import Types.General                        (Stage(..))
+import Types.ServerAction                   (flagAsConstr)
 import Server.Login.Auth                    (handleAuthorization)
 import qualified Network.Socket     as Sock
 import qualified Control.Concurrent as Conc (forkIO)
@@ -58,7 +59,7 @@ initServer = do
 -- делегирует работу определенной функции,
 -- знающей о контексте непосредственной обработки.
 -- При выполнении, установленное соединение закрывается.
-handleConn :: Socket -> Socket -> IO ()
+handleConn :: Socket -> Socket -> IO () 
 handleConn _ conn = do
   flagStage <- recv conn 1
   case (flagAsConstr flagStage (Proxy :: Proxy Stage)) of

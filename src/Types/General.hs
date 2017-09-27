@@ -1,25 +1,24 @@
-{-# LANGUAGE AutoDeriveTypeable  #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveFoldable      #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ConstraintKinds     #-}
-{-# LANGUAGE FlexibleContexts    #-}
 
 module Types.General
-  (Stage(..), Chainable
-  ,constrAsFlag, flagAsConstr
-  ,toSingleChain) where
+  (Stage(..)
+  ,LoginPrimaryData(..), defaultPut) where
 
 --------------------------------------------------------------------------------
 -- Объявления, часто использующиеся в других модулях.
 --------------------------------------------------------------------------------
 
-import Data.Monoid                             ((<>))
-import Data.Default                            (Default, def)
-import Data.ByteString.Char8                   (ByteString)
-import Data.Data                               (Data, ConIndex)
-import qualified Data.ByteString.Char8 as BS8  (pack, unpack)
-import qualified Data.Data             as Data
+import GHC.Generics                 (Generic)
+import Data.Foldable                (toList)
+import Data.Default                 (Default, def)
+import Data.Data                    (Data)
+import Data.Binary                  (Binary(..), Put, Get)
+import qualified Data.Binary as Bin (putList, get)
 
-type Flag = ByteString
+-- Stages Description ----------------------------------------------------------
 
 data Stage = Auth | Reg
   deriving (Data)
@@ -27,24 +26,16 @@ data Stage = Auth | Reg
 instance Default Stage where
   def = Auth
 
--- Функции, ассоциирующие конструкторы типа с флагом. --------------------------
+-- Data related ----------------------------------------------------------------
 
-constrAsFlag :: (Data t) => t -> Flag
-constrAsFlag = BS8.pack . show . Data.constrIndex . Data.toConstr
+data LoginPrimaryData a =
+  LoginPrimaryData { email :: a
+                   , passw :: a }
+  deriving (Show, Foldable, Generic)
 
-flagAsConstr :: forall proxy t. (Default t, Data t) => Flag -> proxy t -> t
-flagAsConstr flag _ =
-  let dt    = Data.dataTypeOf (def :: t)
-      flag' = read (BS8.unpack flag) :: ConIndex
-  -- NOTE: indexConstr является небезопасной из-за функции '!!'.
-  --       Было принято решение не обработывать возможное исключение с целью
-  --       не использовать монаду IO. Исключение врядли возникнет в связи с тем,
-  --       что эта функция используется в паре с constrAsFlag.
-  in (Data.fromConstr . Data.indexConstr dt) flag'
+instance (Binary a) => Binary (LoginPrimaryData a) where
+  put = defaultPut
+  get = (Bin.get :: Get [a]) >>= \(e:p:_) -> return (LoginPrimaryData e p)
 
--- Chainable интерфейс. --------------------------------------------------------
-
-type Chainable t a = (Foldable t, Monoid a)
-
-toSingleChain :: (Chainable t a) => a -> t a -> a
-toSingleChain delimiter = foldMap (\x -> x <> delimiter)
+defaultPut :: (Binary a, Foldable t) => t a -> Put
+defaultPut = Bin.putList . toList

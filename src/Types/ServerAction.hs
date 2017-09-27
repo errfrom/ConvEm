@@ -1,48 +1,72 @@
-{-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE ConstraintKinds        #-}
 
 module Types.ServerAction
   (ServerActionData(..), ServerActionResult, ServerAction(..)
-  ,serverRequest) where
+  ,serverRequest
+  ,constrAsFlag, flagAsConstr) where
 
 --------------------------------------------------------------------------------
 -- Абстракция уровня общения клиента с сервером.
--- Интерфейс ServerAction определяет функцию doAction,
+-- Интерфейс ServerAction определяет функцию runServerAction,
 -- инксапсулирующую определенное обращение клиента к серверу.
 --------------------------------------------------------------------------------
 
-import Control.Monad             (void)
-import Data.Default              (Default)
-import Data.Data                 (Data)
-import Data.Proxy                (Proxy(..))
-import Data.ByteString.Char8     (ByteString)
-import Network.Socket            (Socket)
-import Network.Socket.ByteString (recv, send)
-import Types.General             (Chainable, Stage)
-import qualified Types.General as General
+import Control.Monad                           (void)
+import Data.Default                            (Default, def)
+import Data.Data                               (Data, ConIndex)
+import Data.Proxy                              (Proxy(..))
+import Data.Binary                             (Binary)
+import Data.ByteString.Char8                   (ByteString)
+import Network.Socket                          (Socket)
+import Network.Socket.ByteString               (recv, send)
+import Types.General                           (Stage)
+import Data.ByteString.Lazy.Char8              (toStrict)
+import qualified Data.Binary           as Bin  (encode)
+import qualified Data.ByteString.Char8 as BS8  (pack, unpack)
+import qualified Data.Data             as Data (dataTypeOf, toConstr, fromConstr
+                                               ,constrIndex, indexConstr)
 
-serverRequest :: forall proxy r d. ( Chainable d ByteString
-                                   , ServerActionData (d ByteString)
-                                   , Default r, Data r
-                                   , ServerAction (d ByteString) r )
-              => Stage -> Socket -> d ByteString -> proxy r -> IO r
+-- Эта функция переводит все необходимое в бинарные данные и в нужном
+-- порядке отсылает серверу.
+serverRequest :: forall proxy r. forall a d. (Binary a, ServerAction (d a) r)
+              => Stage -> Socket -> d a -> proxy r -> IO r
 serverRequest stage sock actionData _ = do
-  _ <- send sock (General.constrAsFlag stage)
+  _ <- send sock (constrAsFlag stage)
   waitServer
-  _ <- send sock (General.toSingleChain " " actionData)
+  _ <- send sock (toStrict $ Bin.encode actionData)
   flagResult <- recv sock 1
-  return $ General.flagAsConstr flagResult (Proxy :: Proxy r)
+  return $ flagAsConstr flagResult (Proxy :: Proxy r)
   where waitServer = void (recv sock 1)
 
 -- Action Interface ------------------------------------------------------------
 
-class ServerActionData d where -- TODO: С помощью getFields сделать стандартную имплементацию.
-  validate   :: d -> Bool
+class (Binary d) => ServerActionData d where
+  validateData :: d -> Bool
+  validateData _ = True
 
-class (Data r) => ServerActionResult r where
+class (FlagConstrAssociative r) => ServerActionResult r where
 
-class (ServerActionData d, ServerActionResult r) => ServerAction d r | d -> r where
+class ( ServerActionData d
+      , ServerActionResult r ) => ServerAction d r | d -> r where
   runServerAction :: Socket -> d -> IO r
+
+-- Функции, ассоциирующие конструкторы типа с флагом. --------------------------
+
+type Flag                    = ByteString
+type FlagConstrAssociative t = (Data t, Default t)
+
+constrAsFlag :: (Data t) => t -> Flag
+constrAsFlag = BS8.pack . show . Data.constrIndex . Data.toConstr
+
+flagAsConstr :: forall proxy t. (FlagConstrAssociative t) => Flag -> proxy t -> t
+flagAsConstr flag _ =
+  let dt    = Data.dataTypeOf (def :: t)
+      flag' = read (BS8.unpack flag) :: ConIndex
+  -- NOTE: indexConstr является небезопасной из-за функции '!!'.
+  --       Было принято решение не обработывать возможное исключение с целью
+  --       не использовать монаду IO. Исключение врядли возникнет в связи с тем,
+  --       что эта функция используется в паре с constrAsFlag.
+  in (Data.fromConstr . Data.indexConstr dt) flag'

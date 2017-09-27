@@ -4,8 +4,10 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE AutoDeriveTypeable    #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DeriveFoldable        #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module Login.Logic.Auth
   (AuthData(..), AuthResult(..)
@@ -15,18 +17,19 @@ import Graphics.UI.Threepenny.Core
 import Graphics.UI.Threepenny.Events
 import Control.Monad.Reader            (Reader, ask)
 import Network.Socket                  (Socket)
+import GHC.Generics                    (Generic)
 import Data.ByteString.Char8           (ByteString, pack, unpack)
-import Data.Word8                      (_space)
-import Data.Monoid                     ((<>))
 import Data.Data                       (Data)
+import Data.Binary                     (Binary(..), Get)
 import Data.Default
 import Data.Proxy                      (Proxy(..))
 import Crypto.BCrypt                   (HashingPolicy(..))
-import Types.General                   (Stage(Auth))
+import Types.General                   (Stage(Auth), LoginPrimaryData(..)
+                                       ,defaultPut)
 import Types.ServerAction       hiding (serverRequest)
 import Login.Logic.General             (checkEmail, checkPassw)
-import GUI                      hiding (on)
-import qualified Data.ByteString    as BS     (singleton)
+import GUI
+import qualified Data.Binary        as Bin    (get)
 import qualified Types.ServerAction as Action (serverRequest)
 import qualified Crypto.BCrypt      as BCrypt (hashPasswordUsingPolicy
                                               ,defaultHashAlgorithm)
@@ -37,12 +40,18 @@ type OpenPassword   = ByteString
 type HashedPassword = ByteString
 
 data AuthData a =
-  AuthData { authEmail :: a
-           , authPassw :: a }
-  deriving (Foldable)
+  AuthData { primaryData :: LoginPrimaryData a }
+  deriving (Show, Foldable, Generic)
+
+instance (Binary a) => Binary (AuthData a) where
+  put = defaultPut
+  get = do
+    dataPrimary <- Bin.get :: Get (LoginPrimaryData a)
+    return (AuthData dataPrimary)
 
 instance ServerActionData (AuthData ByteString) where
-  validate AuthData{..} = checkEmail authEmail && checkPassw (unpack authPassw)
+  validateData AuthData{ primaryData = prim } = checkEmail (email prim)
+                                             && checkPassw (unpack $ passw prim)
 
 -- Auth Result Desc ------------------------------------------------------------
 
@@ -68,10 +77,9 @@ hashPassw passw = do
         hashingPolicy = HashingPolicy hashCost BCrypt.defaultHashAlgorithm
 
 instance ServerAction (AuthData ByteString) AuthResult where
-  runServerAction sock aData@AuthData{..}
-   |validate aData = do
-      hashedPassw <- hashPassw authPassw
-      Action.serverRequest Auth sock (aData { authPassw = hashedPassw }) (Proxy :: Proxy AuthResult)
+  runServerAction sock aData
+   |validateData aData =
+      Action.serverRequest Auth sock aData (Proxy :: Proxy AuthResult)
    |otherwise = return AuthInvalidData
 
 -- GUI Represantation ----------------------------------------------------------
@@ -105,7 +113,7 @@ authForm = do
 
         -- Пытается отправить запрос серверу на основе полученных данных.
         makeAuthRequest sock email passw errBox errMsg =
-          let authData = AuthData email (pack passw)
+          let authData = AuthData (LoginPrimaryData email (pack passw))
           in do
             requestResult <- liftIO (runServerAction sock authData)
             case requestResult of

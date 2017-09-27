@@ -1,10 +1,10 @@
 module GUI
-  (on, removeEvents, Event(..), elCalled, removeClass, addClass, hasClass
+  (elCalled, removeClass, addClass, hasClass
   ,getValue) where
 
 import Control.Exception                  (Exception, throw)
 import Text.Printf                        (printf)
-import Graphics.UI.Threepenny.Core hiding (Event, on)
+import Graphics.UI.Threepenny.Core 
 
 type Id = String
 
@@ -50,19 +50,3 @@ hasClass el class' =
 
 getValue :: Element -> UI String
 getValue = get value
-
--- Events ----------------------------------------------------------------------
-
-data Event = EventClick | EventChange
-
--- Связывает элемент с событием, производящим какое-либо действие.
-on :: Event -> Element -> UI () -> UI ()
-on event el fun = do
-  w <- askWindow
-  handler <- (ffiExport . runUI w) fun
-  runFunction $ ffi (makeMethod event) el handler
-  where makeMethod EventClick  = "$(%1).bind('click', %2)"
-        makeMethod EventChange = "$(%1).bind('input', %2)"
-
-removeEvents :: Element -> UI ()
-removeEvents el = runFunction (ffi "$(%1).unbind()" el)

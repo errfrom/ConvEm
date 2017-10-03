@@ -4,5 +4,6 @@ packages:
 extra-deps:
 - syb-with-class-0.6.1.7
 - webkit-0.14.2.1
+- html-parse-0.2.0.1
 flags: {}
 extra-package-dbs: []

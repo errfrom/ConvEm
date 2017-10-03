@@ -7,11 +7,13 @@ import Language.Haskell.TH                      (ExpQ, Exp(LitE), Lit(StringL))
 import Data.String.Utils                        (replace, split, join)
 import Text.Regex                               (mkRegex, subRegex)
 import Text.HTML.Parser                         (Token(..), Attr(..))
+import System.FilePath.Posix                    ((</>))
 import qualified Text.HTML.Parser      as HtmlParser
 import qualified Language.Haskell.TH   as TH    (runIO)
 import qualified Data.Text.Lazy        as LText (pack, unpack)
 import qualified Data.Text             as Text  (pack, unpack)
 import qualified System.FilePath.Posix as Posix (replaceFileName)
+import qualified System.Directory      as Dir   (getCurrentDirectory)
 
 type Content = String
 
@@ -34,12 +36,13 @@ optimizeCss = deleteMultipleSpaces . deleteComments . deleteNewLines
 replaceLinkByInline :: FilePath -> Token -> IO [Token]
 replaceLinkByInline pathHtml token@(TagOpen _ attrs)
  |isCssLink attrs = case (getHrefAttrs attrs) of
-    [Attr _ cssPath] -> do
+    [Attr _ cssPath] ->
       let cssPathFull = Posix.replaceFileName pathHtml (Text.unpack cssPath)
-      cssContent <- readFile cssPathFull
-      return [ TagOpen "style" [(Attr "type" "text/css")]
-             , ContentText (Text.pack $ optimizeCss cssContent)
-             , TagClose "style" ]
+      in do
+        cssContent <- readFile cssPathFull
+        return [ TagOpen "style" [(Attr "type" "text/css")]
+               , ContentText (Text.pack $ optimizeCss cssContent)
+               , TagClose "style" ]
     _ -> return [token]
  |otherwise = return [token]
   where getHrefAttrs = filter $ \(Attr name _) -> name == "href"
@@ -68,9 +71,11 @@ modifyTokensWithInlining pathHtml tokens@(token:xs) =
 loadHtml :: FilePath -> ExpQ
 loadHtml = asStr . TH.runIO . modifyHtml
   where modifyHtml pathHtml = do
-          htmlContent <- readFile pathHtml
+          dirCurrent <- Dir.getCurrentDirectory
+          let htmlPathFull = dirCurrent </> "static/html" </> pathHtml
+          htmlContent <- readFile htmlPathFull
           let htmlTokens = HtmlParser.parseTokensLazy (LText.pack htmlContent)
-          modifiedTokens <- modifyTokensWithInlining pathHtml htmlTokens
+          modifiedTokens <- modifyTokensWithInlining htmlPathFull htmlTokens
           return $ ( LText.unpack
                    . HtmlParser.renderTokens
                    . HtmlParser.canonicalizeTokens) modifiedTokens

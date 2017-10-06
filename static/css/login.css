@@ -5,167 +5,155 @@
   outline                : none;
   -webkit-font-smoothing : subpixel-antialiased;
   -webkit-user-select    : none;
+
+  font-family            : 'Roboto', sans-serif;
 }
+
+button
+{
+  cursor : pointer;
+}
+
+
+/** HEADER **/
+
+#header
+{
+  position : absolute;
+  top      : 20px;
+  left     : 20px;
+  width    : 100%;
+}
+
+#left-box
+{
+  float : left;
+}
+
+#navigation-box
+{
+  float        : right;
+  margin-right : 42px;
+}
+
+
+/** ADVICES **/
+
+#advice-box
+{
+  padding-top : 20px;
+}
+
+.advice-text
+{
+  padding-top : 2px;
+  color       : rgba(0, 0, 0, 0.65);
+  font-weight : 400;
+  font-size   : 14px;
+}
+
+
+/** INPUTS **/
+
+#inputs
+{
+  margin-top  : 20px;
+  width      : 300px;
+}
+
+#inputs input
+{
+  margin-top : 20px;
+}
+
+input
+{
+  -webkit-transition  : border-color 0.15s;
+  -webkit-user-select : all;
+
+  height              : 50px;
+  width               : 300px;
+  padding             : 0px 0px;
+
+  border              : none;
+  border-bottom       : 1px solid rgba(0, 0, 0, 0.08);
+  border-radius       : 0px;
+
+  font-weight         : 400;
+  font-size           : 14px;
+  color               : rgba(0, 0, 0, 0.8);
+  text-indent         : 10px;
+}
+
+input::-webkit-input-placeholder
+{
+  color : rgba(0, 0, 0, 0.40);
+}
+
+input:focus
+{
+  border-bottom : 1.5px solid rgba(0, 0, 0, 0.15);
+}
+
+.field-pair-box
+{
+  height : 50px;
+}
+
+.field-pair-box input
+{
+  width : 142px;
+}
+
+.pair-box-first
+{
+  float : left;
+}
+
+.pair-box-second
+{
+  float : right;
+}
+
+
+/** BUTTONS **/
+
+.btn-link
+{
+  -webkit-transition : color 0.3s;
+  background         : none;
+  border             : none;
+  padding            : 0px 10px;
+  color              : rgba(0, 0, 0, 0.60);
+  font-weight        : 500;
+  font-size          : 15px;
+}
+
+.btn-link:hover
+{
+  color : rgba(0, 0, 0, 0.80);
+}
+
+#btn-sign-out:hover
+{
+  color : #DF4930;
+}
+
 
 /** FORM **/
 
 .form
 {
   position : absolute;
-  width    : 440px;
-  left     : calc(50% - 440px/2);
+  width    : 300px;
+  height   : 250px;
+  left     : calc(50% - 300px/2);
+  top      : calc(50% - 250px/2);
 }
 
-#auth-form
+#header-text
 {
-
-  -webkit-transition : top 0.3s, left 0.3s;
-  height : 161px;
-  top    : calc(50% - 161px/2);
-}
-
-#form-content
-{
-  height     : 90px;
-  margin-top : 30px;
-}
-
-#action-header
-{
-  -webkit-transition : border-bottom 0.3s, width 0.3s;
-  width              : 440px;
-  height             : 40px;
-  border-bottom      : 1px solid rgba(0, 0, 0, 0.08);
-  text-align         : center;
-}
-
-#action-header div
-{
-  -webkit-transition : color 0.3s;
-  color              : rgba(0, 0, 0, 0.9);
-  font-family        : 'Roboto', sans-serif;
-  font-weight        : 400;
-  font-size          : 20px;
-}
-
-#action-header.as-error-container
-{
-  border-bottom : 1px solid #DF4930;
-}
-
-#action-header.as-error-container div
-{
-  font-size : 16px;
-  color     : #DE5234; /* soft red */
-}
-
-/** INPUT AREA **/
-
-#input-area
-{
-  width  : 220px;
-  height : 90px;
-  float  : left;
-}
-
-#input-area #inp-passw
-{
-  margin-top : 10px;
-}
-
-input
-{
-  -webkit-transition  : border-color 0.15s, width 0s;
-  -webkit-user-select : all;
-  height              : 39px;
-  width               : 219px;
-  border              : 1px solid rgba(0, 0, 0, 0.15);
-  border-radius       : 2px;
-  font-family         : 'Roboto', sans-serif;
-  font-weight         : 400;
-  font-size           : 14px;
-  color               : rgba(0, 0, 0, 0.8);
-  text-indent         : 10px;
-  padding             : 0px 0px;
-}
-
-input:hover
-{
-  border-color : rgba(0, 0, 0, 0.25);
-}
-
-input:focus
-{
-  border-color : rgba(0, 0, 0, 0.35);
-}
-
-/** INTERACT AREA **/
-
-#interact-area
-{
-  float      : right;
-  width      : 200px;
-  height     : 90px;
-}
-
-.hint-text
-{
-  color       : rgba(0, 0, 0, 0.8);
-  font-family : 'Roboto', sans-serif;
-  font-weight : 400;
-  font-size   : 14px;
-}
-
-#text-block
-{
-  width : 200px;
-}
-
-#actions
-{
-  margin     : 0 auto;
-  width      : 157px;
-  height     : 20px;
-  margin-top : 10px;
-}
-
-.btn-link
-{
-  -webkit-transition : color 0.15s;
-  background         : none;
-  border             : none;
-  padding            : 0px 5px;
-  color              : rgba(0, 0, 0, 0.55);
-  font-family        : 'Roboto', sans-serif;
-  font-weight        : 500;
-  font-size          : 14px;
-  cursor             : pointer;
-}
-
-.btn-link:hover
-{
-  color : #0971B2; /* soft blue */
-}
-
-/** MEDIA (Lack of width) **/
-
-@media screen and (max-width : 600px)
-{
-  #auth-form {
-    width  : 300px;
-    height : 196px;
-    top    : calc(50% - 196px/2);
-    left   : calc(50% - 300px/2);
-  }
-  #action-header { width : 300px; }
-  input          { width : 300px; -webkit-transition : width 0.3s; }
-  .hint-text     { height : 0; visibility : hidden; }
-  #interact-area {
-    position     : absolute;
-    margin-top   : 95px;
-    padding-left : 5px;
-    height       : 30px;
-    width        : 300px;
-    float        : left;
-  }
+  font-weight : 300;
+  font-size   : 25px;
+  color       : rgba(0, 0, 0, 0.90);
 }

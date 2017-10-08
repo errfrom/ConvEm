@@ -9,6 +9,11 @@
   font-family            : 'Roboto', sans-serif;
 }
 
+*:not(input)
+{
+  cursor : default;
+}
+
 button
 {
   cursor : pointer;
@@ -25,7 +30,12 @@ button
   width    : 100%;
 }
 
-#left-box
+#header .btn-link
+{
+  padding : 0 10px;
+}
+
+#action-box
 {
   float : left;
 }
@@ -37,28 +47,60 @@ button
 }
 
 
+/** FORM **/
+
+#form
+{
+  -webkit-transition : top 0.5s;
+  position : absolute;
+  width    : 300px;
+  left     : calc(50% - 300px/2);
+}
+
+#header-text
+{
+  font-weight : 300;
+  font-size   : 25px;
+  color       : rgba(0, 0, 0, 0.90);
+}
+
+
 /** ADVICES **/
 
-#advice-box
+#error-box
 {
-  padding-top : 20px;
+  -webkit-transition : margin-top 0.5s, margin-bottom 0.5s, opacity 0.1s;
+  opacity : 0;
+}
+
+#error-box.show-error
+{
+  opacity       : 1;
+  margin-top    : 25px;
+  margin-bottom : 25px;
+}
+
+#error-box .advice-text
+{
+  color       : rgba(223, 73, 48, 1);
+  font-weight : 500;
 }
 
 .advice-text
 {
   padding-top : 2px;
-  color       : rgba(0, 0, 0, 0.65);
+  color       : rgba(0, 0, 0, 0.8);
   font-weight : 400;
   font-size   : 14px;
 }
 
 
-/** INPUTS **/
+/** INPUT **/
 
 #inputs
 {
   margin-top  : 20px;
-  width      : 300px;
+  width       : 300px;
 }
 
 #inputs input
@@ -68,16 +110,15 @@ button
 
 input
 {
-  -webkit-transition  : border-color 0.15s;
+  -webkit-transition  : border-color 0.3s;
   -webkit-user-select : all;
 
   height              : 50px;
   width               : 300px;
-  padding             : 0px 0px;
 
   border              : none;
-  border-bottom       : 1px solid rgba(0, 0, 0, 0.08);
-  border-radius       : 0px;
+  border-radius       : 0;
+  border-bottom       : 1px solid rgba(0, 0, 0, 0.12);
 
   font-weight         : 400;
   font-size           : 14px;
@@ -87,12 +128,12 @@ input
 
 input::-webkit-input-placeholder
 {
-  color : rgba(0, 0, 0, 0.40);
+  color : rgba(0, 0, 0, 0.5);
 }
 
 input:focus
 {
-  border-bottom : 1.5px solid rgba(0, 0, 0, 0.15);
+  border-bottom : 1.5px solid rgba(0, 0, 0, 0.25);
 }
 
 .field-pair-box
@@ -123,7 +164,7 @@ input:focus
   -webkit-transition : color 0.3s;
   background         : none;
   border             : none;
-  padding            : 0px 10px;
+  padding            : 0px 0px;
   color              : rgba(0, 0, 0, 0.60);
   font-weight        : 500;
   font-size          : 15px;
@@ -136,24 +177,5 @@ input:focus
 
 #btn-sign-out:hover
 {
-  color : #DF4930;
-}
-
-
-/** FORM **/
-
-.form
-{
-  position : absolute;
-  width    : 300px;
-  height   : 250px;
-  left     : calc(50% - 300px/2);
-  top      : calc(50% - 250px/2);
-}
-
-#header-text
-{
-  font-weight : 300;
-  font-size   : 25px;
-  color       : rgba(0, 0, 0, 0.90);
+  color : rgba(223, 73, 48, 1);
 }

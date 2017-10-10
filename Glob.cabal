@@ -16,16 +16,15 @@ cabal-version:       >= 1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Init
-  other-modules:       Login.Logic.Auth
+  other-modules:       Graphics.Form
+                     , Graphics.Windows
+                     , Inline.StyleSheet
+                     , Login.Logic.Auth
                      , Login.Logic.General
+                     , Server.Login.Auth
+                     , Server.General
                      , Types.General
                      , Types.ServerAction
-                     , Types.NetworkHandler
-                     , Inline.StyleSheet
-                     , Server.General
-                     , Server.Login.Auth
-                     , Utils
-                     , GUI
   build-depends:       base >= 4.7 && < 5
                      , bytestring
                      , directory
@@ -48,6 +47,7 @@ library
                      , html-parse
                      , text
                      , filepath
+                     , transformers
   default-language:    Haskell2010
 
 executable Glob-exe

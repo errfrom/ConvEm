@@ -2,22 +2,24 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Graphics.Form
   ( SwitchBtnToken(..), DescToken(..), FieldToken(..)
   , UIFormBuilder(..), buildForm
-  , notifyError ) where
+  , notifyError, hideError
+  , setSwitch ) where
 
 import Control.Monad.IO.Class              (liftIO)
-import Control.Monad.Trans.Reader          (ReaderT(..), ask)
+import Control.Monad.Trans.Reader          (ReaderT)
 import Data.Word
 import Data.Text                           (Text)
 import Text.HTML.Parser                    (Token(..), Attr(..))
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
 import Graphics.UI.Gtk.WebKit.DOM.Element
-import Graphics.General                    (Id, selNonexistent)
+import Graphics.General                    (Id, onClick, operateElemById)
 import Graphics.Data.Selectors
-import qualified Graphics.UI.Gtk.WebKit.DOM.Document    as Doc
+import Types.General
 import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLElement as Element
 import qualified Text.HTML.Parser                       as HtmlParser
 import qualified Data.Text.Lazy                         as LT (toStrict)
@@ -72,8 +74,12 @@ data FieldToken =
 
 instance HTMLTokenized FieldToken where
   tokenize (SingleField id' text) =
-      TagOpen "input" [ Attr "id" id', Attr "placeholder" text ]
-   :  TagClose "input" : []
+    let typeAttr = if id' == (unSel selInpPassw)
+                   || id' == (unSel selInpPasswRepeat)
+                   then Attr "type" "password" : []
+                   else []
+    in TagOpen "input" ([ Attr "id" id', Attr "placeholder" text ] ++ typeAttr)
+    :  TagClose "input" : []
   tokenize (FieldPair fId' fText sId' sText) =
       TagOpen "div" [ Attr "class" (unSel selBoxFieldPair) ]
    :  wrapWithDiv (unSel selBoxFieldFirst)  (tokenize $ SingleField fId' fText)
@@ -103,17 +109,6 @@ tokenizeMany = concat . map tokenize
 setInnerText :: (ElementClass elem) => Text -> elem -> IO ()
 setInnerText text el = Element.setInnerText (Element.castToHTMLElement el)
                                             (Just text)
-
--- Обобщенное продолжение, свойственное любой функции,
--- каким-либо образом оперирующей с одним элементом.
-operateElemById :: (DocumentClass doc) => CSSSel Id -> (Element -> IO ()) -> ReaderT doc IO ()
-operateElemById selId behavior = do
-  doc <- ask
-  liftIO $ do
-    let selId' = unSel selId
-    el <- Doc.getElementById doc selId'
-    maybe (selNonexistent selId') behavior el
-
 class UIBuildable t where
   build :: (DocumentClass doc) => t -> ReaderT doc IO ()
 
@@ -183,6 +178,7 @@ adaptFormSize uiForm =
 -- зависмости от размера текста ошибки.
 notifyError :: (DocumentClass doc) => UIHeight -> [DescToken] -> ReaderT doc IO ()
 notifyError formHeight errorText = do
+  liftIO $ putStrLn "Show error"
   operateElemById selBoxError (worker errorText)
   setFormHeight (formHeight + getDescHeight errorText + 25)
   where worker errorText boxError =
@@ -190,3 +186,23 @@ notifyError formHeight errorText = do
           in do
             setInnerHTML boxError (Just errorHtml)
             setClassName boxError (unSel selShowError)
+
+-- Прячет ошибку.
+-- NOTE: Правило (hideError . notifyError) == id не выполняется в силу того,
+--       что hideError всего лишь удаляет класс selShowError. При этом
+--       все еще остается ошибка. Позже она может быть заменена другой.
+--       Это сделано в целях производительности.
+hideError :: (DocumentClass doc) => UIHeight -> ReaderT doc IO ()
+hideError formHeight = do
+  liftIO $ putStrLn "hide Error"
+  operateElemById selBoxError $ \boxError -> setClassName boxError ("" :: String)
+  setFormHeight formHeight
+
+setSwitch :: (DocumentClass doc) => LoginStage -> Maybe LoginStage -> ReaderT doc IO ()
+setSwitch fstStage mSndStage = do
+  worker fstStage selSwitchFst
+  case mSndStage of
+    Nothing       -> return ()
+    Just sndStage -> worker sndStage selSwitchSnd
+  where worker stage sel           = operateElemById sel (bindSwitch stage)
+        bindSwitch stage btnSwitch = onClick btnSwitch (print stage) -- FIXME

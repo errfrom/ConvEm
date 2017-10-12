@@ -51,7 +51,6 @@ button
 
 #form
 {
-  -webkit-transition : top 0.5s;
   position : absolute;
   width    : 300px;
   left     : calc(50% - 300px/2);
@@ -59,9 +58,10 @@ button
 
 #header-text
 {
-  font-weight : 300;
-  font-size   : 25px;
-  color       : rgba(0, 0, 0, 0.90);
+  margin-bottom : 25px;
+  font-weight   : 300;
+  font-size     : 25px;
+  color         : rgba(0, 0, 0, 0.90);
 }
 
 
@@ -69,14 +69,16 @@ button
 
 #error-box
 {
-  -webkit-transition : margin-top 0.5s, margin-bottom 0.5s, opacity 0.1s;
-  opacity : 0;
+  width      : 300px;
+  -webkit-transition : margin-bottom 1s, height 1s;
+  overflow : hidden;
+  height  : 0;
+
 }
 
 #error-box.show-error
 {
-  opacity       : 1;
-  margin-top    : 25px;
+  height        : auto;
   margin-bottom : 25px;
 }
 
@@ -123,7 +125,7 @@ input
   font-weight         : 400;
   font-size           : 14px;
   color               : rgba(0, 0, 0, 0.8);
-  text-indent         : 10px;
+  text-indent         : 5px;
 }
 
 input::-webkit-input-placeholder

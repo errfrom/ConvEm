@@ -12,7 +12,7 @@ import Control.Monad.Trans.Reader             (ReaderT(..), ask)
 import Graphics.UI.Gtk.WebKit.DOM.EventTarget (EventTargetClass, addEventListener)
 import Graphics.UI.Gtk.WebKit.DOM.MouseEvent  (MouseEvent)
 import Graphics.UI.Gtk.WebKit.DOM.EventTargetClosures
-import Graphics.UI.Gtk.WebKit.DOM.Element     (ElementClass, Element)
+import Graphics.UI.Gtk.WebKit.DOM.Element     (Element)
 import Graphics.UI.Gtk.WebKit.DOM.Document    (DocumentClass)
 import Graphics.Data.Selectors                (CSSSel, unSel)
 import System.Glib.Signals                    (ConnectId)
@@ -43,6 +43,7 @@ onPress widget eventKeyName' action =
   let event (Key _ _ _ _ _ _ _ _ eventKeyName _)
        |eventKeyName == eventKeyName' = action >> return True
        |otherwise                     = return False
+      event _                         = return False
   in onKeyRelease widget event
 
 -- Обобщенное продолжение, свойственное любой функции,

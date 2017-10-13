@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Types.General
-  (Stage(..)
+  (LoginStage(..)
   ,LoginPrimaryData(..), defaultPut) where
 
 --------------------------------------------------------------------------------
@@ -20,11 +20,16 @@ import qualified Data.Binary as Bin (putList, get)
 
 -- Stages Description ----------------------------------------------------------
 
-data Stage = Auth | Reg
-  deriving (Data)
+data LoginStage =
+    SignInStage
+  | SignUpStage
+  | RecoveryStageEmail
+  | RecoveryStageKey
+  | RecoveryStageChangePassw
+  deriving (Data, Show)
 
-instance Default Stage where
-  def = Auth
+instance Default LoginStage where
+  def = SignInStage
 
 -- Data related ----------------------------------------------------------------
 

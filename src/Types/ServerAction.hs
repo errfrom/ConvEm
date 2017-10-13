@@ -14,7 +14,9 @@ module Types.ServerAction
 -- инксапсулирующую определенное обращение клиента к серверу.
 --------------------------------------------------------------------------------
 
+import System.IO.Error                         (IOError)
 import Control.Monad                           (void)
+import Control.Monad.Except                    (ExceptT, liftIO)
 import Data.Default                            (Default, def)
 import Data.Data                               (Data, ConIndex)
 import Data.Proxy                              (Proxy(..))
@@ -22,7 +24,7 @@ import Data.Binary                             (Binary)
 import Data.ByteString.Char8                   (ByteString)
 import Network.Socket                          (Socket)
 import Network.Socket.ByteString               (recv, send)
-import Types.General                           (Stage)
+import Types.General                           (LoginStage)
 import Data.ByteString.Lazy.Char8              (toStrict)
 import qualified Data.Binary           as Bin  (encode)
 import qualified Data.ByteString.Char8 as BS8  (pack, unpack)
@@ -32,12 +34,12 @@ import qualified Data.Data             as Data (dataTypeOf, toConstr, fromConstr
 -- Эта функция переводит все необходимое в бинарные данные и в нужном
 -- порядке отсылает серверу.
 serverRequest :: forall proxy r. forall a d. (Binary a, ServerAction (d a) r)
-              => Stage -> Socket -> d a -> proxy r -> IO r
+              => LoginStage -> Socket -> d a -> proxy r -> IO r --ExceptT IOError IO r
 serverRequest stage sock actionData _ = do
-  _ <- send sock (constrAsFlag stage)
-  waitServer
-  _ <- send sock (toStrict $ Bin.encode actionData)
-  flagResult <- recv sock 1
+  _ <- (send sock $ constrAsFlag stage)
+  liftIO waitServer
+  _ <- (send sock . toStrict . Bin.encode $ actionData)
+  flagResult <- (recv sock 1)
   return $ flagAsConstr flagResult (Proxy :: Proxy r)
   where waitServer = void (recv sock 1)
 
@@ -49,9 +51,9 @@ class (Binary d) => ServerActionData d where
 
 class (FlagConstrAssociative r) => ServerActionResult r where
 
-class ( ServerActionData d
+class ( ServerActionData   d
       , ServerActionResult r ) => ServerAction d r | d -> r where
-  runServerAction :: Socket -> d -> IO r
+  runServerAction :: Socket -> d -> IO r -- ExceptT IOError IO r
 
 -- Функции, ассоциирующие конструкторы типа с флагом. --------------------------
 

@@ -16,13 +16,19 @@ cabal-version:       >= 1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Init
-  other-modules:       Graphics.Form
-                     , Graphics.Windows
+  other-modules:       Graphics.Data.Forms
+                     , Graphics.Data.Selectors
+                     , Graphics.Form
+                     , Graphics.General
+
                      , Inline.StyleSheet
-                     , Login.Logic.Auth
-                     , Login.Logic.General
-                     , Server.Login.Auth
+
+                     , Login.SignIn
+                     , Login.General
+
+                     , Server.Login.SignIn
                      , Server.General
+
                      , Types.General
                      , Types.ServerAction
   build-depends:       base >= 4.7 && < 5
@@ -34,7 +40,6 @@ library
                      , webkit
                      , gtk
                      , glib
-                     , threepenny-gui
                      , regex-compat
                      , MissingH
                      , syb-with-class

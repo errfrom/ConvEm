@@ -16,15 +16,21 @@ cabal-version:       >= 1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Init
-  other-modules:       Login.Logic.Auth
-                     , Login.Logic.General
+  other-modules:       Graphics.Data.Forms
+                     , Graphics.Data.Selectors
+                     , Graphics.Form
+                     , Graphics.General
+
+                     , Inline.StyleSheet
+
+                     , Login.SignIn
+                     , Login.General
+
+                     , Server.Login.SignIn
+                     , Server.General
+
                      , Types.General
                      , Types.ServerAction
-                     , Templates.Inline
-                     , Server.General
-                     , Server.Login.Auth
-                     , Utils
-                     , GUI
   build-depends:       base >= 4.7 && < 5
                      , bytestring
                      , directory
@@ -34,7 +40,6 @@ library
                      , webkit
                      , gtk
                      , glib
-                     , threepenny-gui
                      , regex-compat
                      , MissingH
                      , syb-with-class
@@ -44,6 +49,10 @@ library
                      , mtl
                      , data-default
                      , binary
+                     , html-parse
+                     , text
+                     , filepath
+                     , transformers
   default-language:    Haskell2010
 
 executable Glob-exe

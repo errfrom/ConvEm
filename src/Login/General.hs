@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Login.Logic.General
+module Login.General
   (checkEmail, checkPassw) where
 
 import Data.ByteString.Char8     (ByteString, unpack)

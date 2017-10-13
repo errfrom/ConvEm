@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Server.Login.Auth
+module Server.Login.SignIn
   ( handleAuthorization ) where
 
 import Network.Socket            (Socket)
 import Network.Socket.ByteString (recv, send)
 import Data.ByteString           (ByteString)
 import Database.MySQL.Simple     (Only(..))
-import Login.Logic.Auth          (AuthData(..), AuthResult(..))
+import Login.SignIn              (SignInData(..), SignInResult(..))
 import Types.General             (LoginPrimaryData(..))
 import Types.ServerAction        (constrAsFlag)
 import qualified Data.Binary           as Bin   (decode)
@@ -19,12 +19,12 @@ handleAuthorization :: Socket -> IO ByteString
 handleAuthorization conn = do
   _      <- send conn "1"
   bsData <- LBS.fromStrict <$> recv conn 200
-  let data_ = primaryData (Bin.decode bsData :: AuthData ByteString)
+  let data_ = primaryData (Bin.decode bsData :: SignInData ByteString)
   mPasswHash <- getHashedPassword (email data_)
   let res = case mPasswHash of
-              Nothing -> AuthInvalidData
+              Nothing -> SignInInvalidData
               Just ph -> if (Crypt.validatePassword ph $ passw data_)
-                           then AuthCorrectData else AuthInvalidData
+                           then SignInCorrectData else SignInInvalidData
   return (constrAsFlag res)
 
 -- Получает хеш пароля по указанному значению
@@ -34,7 +34,8 @@ getHashedPassword :: ByteString -> IO (Maybe ByteString)
 getHashedPassword email =
   let query = "SELECT USERS_PASSWORD FROM USERS WHERE USER_EMAIL = ?"
   in do
-    conn <- MySql.connect MySql.defaultConnectInfo 
+    conn <- MySql.connect MySql.defaultConnectInfo {MySql.connectDatabase = "users"
+                                                   ,MySql.connectPassword = "adimro8010"}
     sqlResult <- MySql.query conn query (Only email) :: IO [Only ByteString]
     return $ case sqlResult of
                [] -> Nothing

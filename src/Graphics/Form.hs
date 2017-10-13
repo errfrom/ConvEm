@@ -8,21 +8,25 @@ module Graphics.Form
   ( SwitchBtnToken(..), DescToken(..), FieldToken(..)
   , UIFormBuilder(..), buildForm
   , notifyError, hideError
-  , setSwitch ) where
+  , setSwitch, basicFormSetup ) where
 
 import Control.Monad.IO.Class              (liftIO)
-import Control.Monad.Trans.Reader          (ReaderT)
+import Control.Monad.Trans.Reader          (ReaderT(..), ask)
 import Data.Word
 import Data.Text                           (Text)
 import Text.HTML.Parser                    (Token(..), Attr(..))
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
 import Graphics.UI.Gtk.WebKit.DOM.Element
-import Graphics.General                    (Id, onClick, operateElemById)
+import Graphics.General                    (Id, onClick, onFocus, operateElemById)
 import Graphics.Data.Selectors
 import Types.General
-import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLElement as Element
-import qualified Text.HTML.Parser                       as HtmlParser
-import qualified Data.Text.Lazy                         as LT (toStrict)
+import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLElement      as Element
+import qualified Text.HTML.Parser                            as HtmlParser
+import qualified Data.Maybe                                  as M  (catMaybes)
+import qualified Data.Text.Lazy                              as LT (toStrict)
+import qualified Graphics.UI.Gtk.WebKit.DOM.Document         as Doc
+import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement as Inp
+import qualified Graphics.UI.Gtk.WebKit.DOM.NodeList         as NL
 
 class HTMLTokenized t where
   tokenize :: t -> [Token]
@@ -206,3 +210,18 @@ setSwitch fstStage mSndStage = do
     Just sndStage -> worker sndStage selSwitchSnd
   where worker stage sel           = operateElemById sel (bindSwitch stage)
         bindSwitch stage btnSwitch = onClick btnSwitch (print stage) -- FIXME
+
+basicFormSetup :: (DocumentClass doc) => UIHeight -> ReaderT doc IO ()
+basicFormSetup uiHeight =
+  let tagInput = "input" :: String
+  in do
+    doc <- ask
+    liftIO $ do
+      (Just inputsNodeList) <- Doc.getElementsByTagName doc tagInput
+      bindHideError inputsNodeList doc uiHeight
+  where -- Каждому полю ввода устанавливается событие: при фокусе скрывать ошибку.
+        bindHideError inputsNodeList doc uiHeight = do
+          numInputs <- NL.getLength inputsNodeList
+          inputs    <- sequence [ NL.item inputsNodeList i | i <- [0..numInputs]] >>=
+                       return . map Inp.castToHTMLInputElement . M.catMaybes
+          mapM_ (flip onFocus $ runReaderT (hideError uiHeight) doc) inputs

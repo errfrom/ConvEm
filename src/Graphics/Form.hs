@@ -182,7 +182,6 @@ adaptFormSize uiForm =
 -- зависмости от размера текста ошибки.
 notifyError :: (DocumentClass doc) => UIHeight -> [DescToken] -> ReaderT doc IO ()
 notifyError formHeight errorText = do
-  liftIO $ putStrLn "Show error"
   operateElemById selBoxError (worker errorText)
   setFormHeight (formHeight + getDescHeight errorText + 25)
   where worker errorText boxError =
@@ -198,7 +197,6 @@ notifyError formHeight errorText = do
 --       Это сделано в целях производительности.
 hideError :: (DocumentClass doc) => UIHeight -> ReaderT doc IO ()
 hideError formHeight = do
-  liftIO $ putStrLn "hide Error"
   operateElemById selBoxError $ \boxError -> setClassName boxError ("" :: String)
   setFormHeight formHeight
 

@@ -1,19 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Inline.StyleSheet
- ( loadHtml ) where
+ ( loadHtml, readHtml, appendHtml ) where
 
-import Language.Haskell.TH                      (ExpQ, Exp(LitE), Lit(StringL))
-import Data.String.Utils                        (replace, split, join)
-import Text.Regex                               (mkRegex, subRegex)
-import Text.HTML.Parser                         (Token(..), Attr(..))
-import System.FilePath.Posix                    ((</>))
-import qualified Text.HTML.Parser      as HtmlParser
-import qualified Language.Haskell.TH   as TH    (runIO)
-import qualified Data.Text.Lazy        as LText (pack, unpack)
-import qualified Data.Text             as Text  (pack, unpack)
-import qualified System.FilePath.Posix as Posix (replaceFileName)
-import qualified System.Directory      as Dir   (getCurrentDirectory)
+import Language.Haskell.TH                                      (ExpQ, Exp(LitE), Lit(StringL))
+import Data.String.Utils                                        (replace, split, join)
+import Text.Regex                                               (mkRegex, subRegex)
+import Text.HTML.Parser                                         (Token(..), Attr(..))
+import System.FilePath.Posix                                    ((</>))
+import Graphics.UI.Gtk.WebKit.DOM.Document                      (DocumentClass)
+import qualified Text.HTML.Parser                    as HtmlParser
+import qualified Language.Haskell.TH                 as TH      (runIO)
+import qualified Data.Text.Lazy                      as LText   (pack, unpack)
+import qualified Data.Text                           as Text    (pack, unpack)
+import qualified System.FilePath.Posix               as Posix   (replaceFileName)
+import qualified System.Directory                    as Dir     (getCurrentDirectory)
+import qualified Graphics.UI.Gtk.WebKit.DOM.Document as Doc
+import qualified Graphics.UI.Gtk.WebKit.DOM.Element  as Element (setInnerHTML)
+import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLElement as HTMLElement (insertAdjacentHTML)
 
 type Content = String
 
@@ -50,20 +54,47 @@ replaceLinkByInline pathHtml token@(TagOpen _ attrs)
 replaceLinkByInline _ token = return [token]
 
 -- Лениво обходит список токенов, заменяя все теги 'link' на их содержание.
-modifyTokensWithInlining :: FilePath -> [Token] -> IO [Token]
-modifyTokensWithInlining _ [] = return []
+-- Возвращает два списка: в первом - содержание тега head, во втором - остальное.
+modifyTokensWithInlining :: FilePath -> [Token] -> IO ([Token], [Token])
+modifyTokensWithInlining _ [] = return $ mempty ()
 modifyTokensWithInlining pathHtml tokens@(token:xs) =
-  let modifyNext = modifyTokensWithInlining pathHtml xs
+  let nextModified          = modifyTokensWithInlining pathHtml xs
+      tokenWithNextModified = mappend (token:[], []) <$> nextModified
   in case token of
-    TagOpen tagName _ ->
-      if (tagName == "link")
-        then mappend (replaceLinkByInline pathHtml token) modifyNext
-        else fmap (token:) modifyNext
-    TagClose tagName -> -- To be more lazy =)
-      if (tagName == "head") -- Теги 'link' не могут находится в 'body'.
-        then return tokens
-        else fmap (token:) modifyNext
-    _                -> fmap (token:) modifyNext
+    TagOpen tagName _ -> if (tagName == "link")
+                           then do replacedLinks <- replaceLinkByInline pathHtml token
+                                   mappend (replacedLinks, []) <$> nextModified
+                           else tokenWithNextModified
+    TagClose tagName ->  if (tagName == "head")
+                           then return (token:[], xs)
+                           else tokenWithNextModified
+    _                ->  tokenWithNextModified
+
+getHtmlFullPath :: FilePath -> IO FilePath
+getHtmlFullPath pathHtml = do
+  dirCurrent <- Dir.getCurrentDirectory
+  return (dirCurrent </> "static/html" </> pathHtml)
+
+readHtml :: FilePath -> ExpQ
+readHtml pathHtml = (asStr . TH.runIO) (getHtmlFullPath pathHtml >>= readFile)
+
+appendHtml :: (DocumentClass doc) => doc -> FilePath -> String -> IO ()
+appendHtml doc pathHtml htmlContents =
+  let htmlTokens   = HtmlParser.parseTokensLazy (LText.pack htmlContents)
+      headContents = (init . tail) htmlTokens -- Убираем head теги.
+  in do
+    htmlFullPath <- getHtmlFullPath pathHtml
+    (headTokens, bodyTokens) <- modifyTokensWithInlining htmlFullPath htmlTokens
+    let headContents = (toHtml . init . tail) headTokens
+        bodyContents = toHtml bodyTokens
+        htmlPosition = "beforeend"
+    (Just elHead) <- Doc.getHead doc
+    (Just elBody) <- Doc.getBody doc
+    HTMLElement.insertAdjacentHTML elHead htmlPosition headContents
+    HTMLElement.insertAdjacentHTML elBody htmlPosition bodyContents
+    where toHtml = LText.unpack
+                 . HtmlParser.renderTokens
+                 . HtmlParser.canonicalizeTokens
 
 -- Встраивает в HTML весь CSS контент, определенный тегами 'link',
 -- предварительно его оптимизировав. Эти действия производятся на этапе
@@ -71,11 +102,11 @@ modifyTokensWithInlining pathHtml tokens@(token:xs) =
 loadHtml :: FilePath -> ExpQ
 loadHtml = asStr . TH.runIO . modifyHtml
   where modifyHtml pathHtml = do
-          dirCurrent <- Dir.getCurrentDirectory
-          let htmlPathFull = dirCurrent </> "static/html" </> pathHtml
-          htmlContent <- readFile htmlPathFull
+          htmlFullPath <- getHtmlFullPath pathHtml
+          htmlContent  <- readFile htmlFullPath
           let htmlTokens = HtmlParser.parseTokensLazy (LText.pack htmlContent)
-          modifiedTokens <- modifyTokensWithInlining htmlPathFull htmlTokens
+          modifiedTokens <- modifyTokensWithInlining htmlFullPath htmlTokens
           return $ ( LText.unpack
                    . HtmlParser.renderTokens
-                   . HtmlParser.canonicalizeTokens) modifiedTokens
+                   . HtmlParser.canonicalizeTokens
+                   . \tokens -> fst tokens ++ snd tokens ) modifiedTokens

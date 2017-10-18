@@ -4,17 +4,15 @@
 module Init
   ( initInterface ) where
 
-import Control.Monad.Reader                (runReaderT)
 import Control.Monad                       (void)
 import Control.Concurrent                  (forkIO)
-import Control.Concurrent.MVar             (MVar, takeMVar, newEmptyMVar)
+import Control.Concurrent.MVar             (takeMVar, newEmptyMVar)
 import System.Glib.Attributes              (AttrOp((:=)))
 import Graphics.UI.Gtk                     (on, Window)
 import Graphics.UI.Gtk.WebKit.WebView      (WebView)
 import Graphics.UI.Gtk.WebKit.DOM.Document (Document)
 import Login.SignIn                        (logInSetup)
 import Inline.StyleSheet
-import Control.Concurrent.MVar
 import Server.General
 import Graphics.General
 import Graphics.Data.Selectors
@@ -45,7 +43,7 @@ initLogin winTitle winBehavior = do
     (Just doc) <- WV.webViewGetDomDocument wv
     winBehavior $ WinParameters win wv doc
     _ <- Gtk.onDelete win $ \_ -> Gtk.windowIconify win >> return True
-    Gtk.onDestroy win $ Gtk.mainQuit
+    _ <- Gtk.onDestroy win $ Gtk.mainQuit
     return ()
 
 initInterface :: IO ()
@@ -53,21 +51,21 @@ initInterface =
   let winTitle    = "Conv'Em" :: String
       selBtnQuit' = unSel selBtnQuit
   in do
-    _   <- Gtk.initGUI
-    _   <- forkIO initServer
+    _    <- Gtk.initGUI
+    _    <- forkIO initServer
     sock <- initSocket ClientSocket
     mvarAuthorized <- newEmptyMVar
-    initLogin winTitle $ \winParams -> do
+    initLogin winTitle $ \winParams ->
       let doc = winDoc winParams
           win = winGtk winParams
-      btnQuit <- Doc.getElementById doc selBtnQuit'
-      maybe (selNonexistent selBtnQuit')
-            (\btn -> do setInnerText (castToHTMLElement btn) (Just "ВЫЙТИ")
-                        bindQuit win sock btn) btnQuit
-      flip runReaderT doc (logInSetup win sock mvarAuthorized)
-     --_ <- takeMVar mvarAuthorized
-    putStrLn "END."
+      in do
+        btnQuit <- Doc.getElementById doc selBtnQuit'
+        maybe (selNonexistent selBtnQuit')
+              (\btn -> do setInnerText (castToHTMLElement btn) (Just "ВЫЙТИ")
+                          bindQuit win sock btn) btnQuit
+        logInSetup doc win sock mvarAuthorized
     Gtk.mainGUI
+    putStrLn "END."
     where bindQuit win sock btnQuit = onClick btnQuit $ do
             Gtk.widgetDestroy win
             Sock.close sock

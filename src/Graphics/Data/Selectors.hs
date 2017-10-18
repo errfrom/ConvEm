@@ -7,7 +7,7 @@ module Graphics.Data.Selectors
   , selBtnRules, selTxtHeader, selBoxAdvice, selBoxInputs, selBoxError, selForm
   , selBtnLink, selTxtAdvice, selBoxFieldPair, selBoxFieldFirst
   , selBoxFieldSecond, selShowError, selBtnQuit, selBoxNavigation
-  , selSwitchFst, selSwitchSnd ) where
+  , selSwitchFst, selSwitchSnd, selBtnRetry, selBtnOfflineMode, selNoConnBox, selShown ) where
 
 import Data.Text (Text)
 
@@ -32,6 +32,8 @@ selInpSurname                        = CSSSel "inp-surname"
 -- указывающие, как следует вводить данные при регистрации.
 selBtnRules                          = CSSSel "btn-rules"
 selBtnQuit                           = CSSSel "btn-sign-out"
+selBtnRetry                          = CSSSel "btn-retry"
+selBtnOfflineMode                    = CSSSel "btn-offline-mode"
 selSwitchFst                         = CSSSel "btn-switch-fst"
 selSwitchSnd                         = CSSSel "btn-switch-snd"
 
@@ -41,6 +43,8 @@ selBoxNavigation                     = CSSSel "navigation-box"
 selBoxError                          = CSSSel "error-box"
 selBoxAdvice                         = CSSSel "advice-box"
 selBoxInputs                         = CSSSel "inputs"
+selNoConnBox                         = CSSSel "no-conn-box"
+selShown                             = CSSSel "shown"
 
 -- Class -----------------------------------------------------------------------
 

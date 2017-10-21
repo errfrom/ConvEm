@@ -1,22 +1,21 @@
 #no-conn-box
 {
-  position : absolute;
-  bottom   : 0;
+  position    : absolute;
+  bottom      : 0;
 
-  background : white;
-  border     : none;
-  border-top : 1px solid rgba(0, 0, 0, 0.08);
+  background  : white;
+  border      : none;
+  border-top  : 1px solid rgba(0, 0, 0, 0.08);
 
-  -webkit-transition : height 0.3s;
-  width              : 100%;
-  height             : 0px;
-  opacity            : 0;
+  width       : 100%;
+  height      : 60px;
+  visibility  : hidden;
 
   font-family : 'Roboto', sans-serif;
-  font-size   : 18px;
-  font-weight : 300;
+  font-size   : 16px;
+  font-weight : 400;
   text-align  : center;
-  color       : rgba(0, 0, 0, 0.50);
+  color       : rgba(0, 0, 0, 0.40);
 }
 
 #no-conn-box div
@@ -25,10 +24,27 @@
   margin-top : 15px;
 }
 
+#no-conn-box.hidden
+{
+  visibility        : visible;
+  -webkit-animation : slideOutDown 0.5s forwards;
+}
+
+#no-conn-box.hidden div
+{
+  visibility        : visible;
+  -webkit-animation : slideOutDown 0.25s forwards;
+}
+
 #no-conn-box.shown
 {
-  opacity : 1;
-  height  : 60px;
+  visibility : visible;
+  -webkit-animation : slideInUp 0.25s;
+}
+
+#no-conn-box.shown div
+{
+  -webkit-animation : slideInUp 0.5s;
 }
 
 #btn-retry
@@ -37,13 +53,31 @@
   background         : none;
   border             : none;
   padding            : 0px 5px;
-  color              : rgba(0, 0, 0, 0.70);
+  color              : rgba(0, 0, 0, 0.60);
   font-family        : 'Roboto', sans-serif;
-  font-weight        : 300;
-  font-size          : 18px;
+  font-weight        : 400;
+  font-size          : 16px;
 }
 
 #btn-retry:hover
 {
-  color : rgba(0, 0, 0, 1);
+  color : rgba(0, 0, 0, 0.80);
+}
+
+#btn-retry:disabled
+{
+  color   : rgba(0, 0, 0, 0.40);
+  cursor  : default;
+}
+
+@-webkit-keyframes slideInUp
+{
+  from { -webkit-transform: translate3d(0, 100%, 0); visibility: visible; }
+  to   { -webkit-transform: translate3d(0, 0, 0);                         }
+}
+
+@-webkit-keyframes slideOutDown
+{
+  from { -webkit-transform: translate3d(0, 0, 0);                        }
+  to   { visibility: hidden; -webkit-transform: translate3d(0, 100%, 0); }
 }

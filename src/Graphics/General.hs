@@ -8,38 +8,51 @@ module Graphics.General
   , getValue
   , withNoConnHandling ) where
 
-import Data.Text                              (Text, unpack)
-import Control.Concurrent.MVar
-import Control.Monad.IO.Class                 (liftIO)
-import Control.Monad.Trans.Reader             (ReaderT(..), ask)
-import Control.Exception                      (IOException, catch)
-import Graphics.UI.Gtk.WebKit.DOM.EventTarget (EventTargetClass, addEventListener)
-import Graphics.UI.Gtk.WebKit.DOM.MouseEvent  (MouseEvent)
-import Graphics.UI.Gtk.WebKit.DOM.EventTargetClosures
-import Graphics.UI.Gtk.WebKit.DOM.Element     (Element, ElementClass)
-import Graphics.UI.Gtk.WebKit.DOM.Document    (DocumentClass)
-import Graphics.Data.Selectors                (CSSSel, unSel)
-import System.Glib.Signals                    (ConnectId)
-import Graphics.UI.Gtk.Abstract.Widget        (WidgetClass, onKeyRelease)
-import Graphics.UI.Gtk.Gdk.Events             (Event(Key))
-import Types.ServerAction
-import Inline.StyleSheet
+import Data.Text                                    (Text, unpack)
+import Control.Concurrent.MVar                      (newEmptyMVar, putMVar, takeMVar)
+import Control.Monad.IO.Class                       (liftIO)
+import Control.Monad                                (void)
+import Control.Monad.Trans.Reader                   (ReaderT(..), ask)
+import Control.Exception                            (IOException, catch)
+import Graphics.UI.Gtk.WebKit.DOM.EventTarget       (EventTargetClass)
+import Graphics.UI.Gtk.WebKit.DOM.MouseEvent        (MouseEvent)
+import Graphics.UI.Gtk.WebKit.DOM.Element           (Element, ElementClass)
+import Graphics.UI.Gtk.WebKit.DOM.Document          (DocumentClass)
+import Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement  (castToHTMLInputElement)
+import Graphics.UI.Gtk.WebKit.DOM.HTMLElement       (castToHTMLElement)
+import Graphics.UI.Gtk.WebKit.DOM.HTMLButtonElement (castToHTMLButtonElement)
+import Graphics.UI.Gtk.Abstract.Widget              (WidgetClass)
+import Graphics.UI.Gtk.Gdk.Events                   (Event(Key))
+import System.Glib.Signals                          (ConnectId)
+import Graphics.Data.Dialogs                        (ConnErrDialogData(..), connErrDialogData)
 import Graphics.Data.Selectors
-import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement as Inp
-import qualified Graphics.UI.Gtk.WebKit.DOM.Document         as Doc
-import qualified Graphics.UI.Gtk.WebKit.DOM.Element          as Element
-import Graphics.UI.Gtk.General.General
+import Types.ServerAction
+import qualified Control.Concurrent                             as Conc    (threadDelay)
+import qualified Inline.StyleSheet                              as Inline  (readHtml, appendHtml)
+import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement    as Inp     (getValue)
+import qualified Graphics.UI.Gtk.WebKit.DOM.Document            as Doc     (getElementById)
+import qualified Graphics.UI.Gtk.WebKit.DOM.Element             as Element (setClassName)
+import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLElement         as Element (setInnerText)
+import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLButtonElement   as Button  (setDisabled, setValue)
+import qualified Graphics.UI.Gtk.WebKit.DOM.EventTarget         as Event   (addEventListener)
+import qualified Graphics.UI.Gtk.WebKit.DOM.EventTargetClosures as Event   (eventListenerNew)
+import qualified Graphics.UI.Gtk                                as Gtk     (onKeyRelease
+                                                                           ,timeoutAdd
+                                                                           ,postGUIAsync)
 
 type Id    = Text
 type Class = Text
+
+setInnerText :: Element -> Text -> IO ()
+setInnerText el text = Element.setInnerText (castToHTMLElement el) (Just text)
 
 selNonexistent :: Text -> IO ()
 selNonexistent sel = putStrLn $ "Not valid selector - " ++ (unpack sel) ++ "."
 
 onMouseEvent :: (EventTargetClass self) => String -> self -> IO () -> IO ()
 onMouseEvent eventName target action = do
-  eventListener <- eventListenerNew $ \(_ :: MouseEvent) -> action
-  addEventListener target eventName (Just eventListener) True
+  eventListener <- Event.eventListenerNew $ \(_ :: MouseEvent) -> action
+  Event.addEventListener target eventName (Just eventListener) True
 
 onClick, onFocus :: (EventTargetClass self) => self -> IO () -> IO ()
 
@@ -53,7 +66,7 @@ onPress widget eventKeyName' action =
        |eventKeyName == eventKeyName' = action >> return True
        |otherwise                     = return False
       event _                         = return False
-  in onKeyRelease widget event
+  in Gtk.onKeyRelease widget event
 
 -- Обобщенное продолжение, свойственное любой функции,
 -- каким-либо образом оперирующей с одним элементом.
@@ -72,12 +85,15 @@ getValue doc selId =
   in do
     inp <- Doc.getElementById doc selId'
     maybe (selNonexistent selId' >> return Nothing)
-          (Inp.getValue . Inp.castToHTMLInputElement) inp
+          (Inp.getValue . castToHTMLInputElement) inp
 
 initNoConnBox :: (DocumentClass doc) => doc -> IO Element
 initNoConnBox doc = do
-  appendHtml doc "no-conn-box.html" $(readHtml "no-conn-box.html")
+  Inline.appendHtml doc "no-conn-box.html" $(Inline.readHtml "no-conn-box.html")
   (Just noConnBox) <- Doc.getElementById doc (unSel selNoConnBox)
+  flip runReaderT doc $ do
+    operateElemById selConnErrMsg $ flip setInnerText (dataConnErrMessage connErrDialogData)
+    operateElemById selBtnRetry   $ flip setInnerText (dataBtnRetryActive connErrDialogData)
   return noConnBox
 
 -- Выполняет действие, зависимое от состояния соединения с сетью.
@@ -86,19 +102,32 @@ initNoConnBox doc = do
 withNoConnHandling :: (DocumentClass doc, ServerActionResult r) => doc -> IO r -> IO r
 withNoConnHandling doc action = tryRunAction action $ do
   mvarActionResult <- newEmptyMVar
-  postGUIAsync $ do
-    noConnBox        <- getNoConnBox doc
+  Gtk.postGUIAsync $ do
+    noConnBox <- getNoConnBox doc
     handleNoConn doc action mvarActionResult noConnBox
   takeMVar mvarActionResult
   where tryRunAction action handler = catch action $ \(_ :: IOException) -> handler
-        getNoConnBox doc            = do
+
+        getNoConnBox doc = do
           -- Делает попытку найти noConnBox в DOM.
           -- При неудаче создает новый элемент noConnBox и встраивает в DOM.
           noConnBox <- Doc.getElementById doc (unSel selNoConnBox)
           maybe (initNoConnBox doc) (return . id) noConnBox
+
+        setExecutingState htmlBtnRetry = do
+          Button.setDisabled htmlBtnRetry True
+          Element.setInnerText htmlBtnRetry (Just $ dataBtnRetryExecuting connErrDialogData)
+
+        setStartingState htmlBtnRetry = do
+          Button.setDisabled htmlBtnRetry False
+          Element.setInnerText htmlBtnRetry (Just $ dataBtnRetryActive connErrDialogData)
+
         handleNoConn doc action mvarActionResult noConnBox = do
           Element.setClassName noConnBox (unSel selShown)
           flip runReaderT doc $ operateElemById selBtnRetry $ \btnRetry -> onClick btnRetry $
-            flip tryRunAction (return ()) $ do
-              action >>= putMVar mvarActionResult
-              Element.setClassName noConnBox ""
+            let htmlBtnRetry = castToHTMLButtonElement btnRetry
+            in void $ do setExecutingState htmlBtnRetry
+                         flip tryRunAction (return()) $ do
+                           action >>= putMVar mvarActionResult
+                           Element.setClassName noConnBox (unSel selHidden)
+                         flip Gtk.timeoutAdd 3000 (setStartingState htmlBtnRetry >> return False)

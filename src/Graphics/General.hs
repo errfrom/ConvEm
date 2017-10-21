@@ -87,7 +87,7 @@ withNoConnHandling :: (DocumentClass doc, ServerActionResult r) => doc -> IO r -
 withNoConnHandling doc action = tryRunAction action $ do
   mvarActionResult <- newEmptyMVar
   postGUIAsync $ do
-    noConnBox        <- getNoConnBox doc
+    noConnBox <- getNoConnBox doc
     handleNoConn doc action mvarActionResult noConnBox
   takeMVar mvarActionResult
   where tryRunAction action handler = catch action $ \(_ :: IOException) -> handler
@@ -101,4 +101,4 @@ withNoConnHandling doc action = tryRunAction action $ do
           flip runReaderT doc $ operateElemById selBtnRetry $ \btnRetry -> onClick btnRetry $
             flip tryRunAction (return ()) $ do
               action >>= putMVar mvarActionResult
-              Element.setClassName noConnBox ""
+              Element.setClassName noConnBox (unSel selHidden)

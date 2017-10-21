@@ -1,16 +1,15 @@
 #no-conn-box
 {
-  position : absolute;
-  bottom   : 0;
+  position    : absolute;
+  bottom      : 0;
 
-  background : white;
-  border     : none;
-  border-top : 1px solid rgba(0, 0, 0, 0.08);
+  background  : white;
+  border      : none;
+  border-top  : 1px solid rgba(0, 0, 0, 0.08);
 
-  -webkit-transition : height 0.3s;
-  width              : 100%;
-  height             : 0px;
-  opacity            : 0;
+  width       : 100%;
+  height      : 60px;
+  visibility  : hidden;
 
   font-family : 'Roboto', sans-serif;
   font-size   : 18px;
@@ -25,10 +24,27 @@
   margin-top : 15px;
 }
 
+#no-conn-box.hidden
+{
+  visibility        : visible;
+  -webkit-animation : slideOutDown 1s forwards;
+}
+
+#no-conn-box.hidden div
+{
+  visibility        : visible;
+  -webkit-animation : slideOutDown 0.5s forwards;
+}
+
 #no-conn-box.shown
 {
-  opacity : 1;
-  height  : 60px;
+  visibility : visible;
+  -webkit-animation : slideInUp 0.5s;
+}
+
+#no-conn-box.shown div
+{
+  -webkit-animation : slideInUp 1s;
 }
 
 #btn-retry
@@ -46,4 +62,16 @@
 #btn-retry:hover
 {
   color : rgba(0, 0, 0, 1);
+}
+
+@-webkit-keyframes slideInUp
+{
+  from { -webkit-transform: translate3d(0, 100%, 0); visibility: visible; }
+  to   { -webkit-transform: translate3d(0, 0, 0);                         }
+}
+
+@-webkit-keyframes slideOutDown
+{
+  from { -webkit-transform: translate3d(0, 0, 0);                        }
+  to   { visibility: hidden; -webkit-transform: translate3d(0, 100%, 0); }
 }

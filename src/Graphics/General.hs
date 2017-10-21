@@ -24,8 +24,9 @@ import Graphics.UI.Gtk.WebKit.DOM.HTMLButtonElement (castToHTMLButtonElement)
 import Graphics.UI.Gtk.Abstract.Widget              (WidgetClass)
 import Graphics.UI.Gtk.Gdk.Events                   (Event(Key))
 import System.Glib.Signals                          (ConnectId)
-import Types.ServerAction
+import Graphics.Data.Dialogs                        (ConnErrDialogData(..), connErrDialogData)
 import Graphics.Data.Selectors
+import Types.ServerAction
 import qualified Control.Concurrent                             as Conc    (threadDelay)
 import qualified Inline.StyleSheet                              as Inline  (readHtml, appendHtml)
 import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement    as Inp     (getValue)
@@ -42,7 +43,7 @@ import qualified Graphics.UI.Gtk                                as Gtk     (onKe
 type Id    = Text
 type Class = Text
 
-setInnerText :: Element -> String -> IO ()
+setInnerText :: Element -> Text -> IO ()
 setInnerText el text = Element.setInnerText (castToHTMLElement el) (Just text)
 
 selNonexistent :: Text -> IO ()
@@ -90,6 +91,9 @@ initNoConnBox :: (DocumentClass doc) => doc -> IO Element
 initNoConnBox doc = do
   Inline.appendHtml doc "no-conn-box.html" $(Inline.readHtml "no-conn-box.html")
   (Just noConnBox) <- Doc.getElementById doc (unSel selNoConnBox)
+  flip runReaderT doc $ do
+    operateElemById selConnErrMsg $ flip setInnerText (dataConnErrMessage connErrDialogData)
+    operateElemById selBtnRetry   $ flip setInnerText (dataBtnRetryActive connErrDialogData)
   return noConnBox
 
 -- Выполняет действие, зависимое от состояния соединения с сетью.
@@ -112,11 +116,11 @@ withNoConnHandling doc action = tryRunAction action $ do
 
         setExecutingState htmlBtnRetry = do
           Button.setDisabled htmlBtnRetry True
-          Element.setInnerText htmlBtnRetry (Just "Выполнение...")
+          Element.setInnerText htmlBtnRetry (Just $ dataBtnRetryExecuting connErrDialogData)
 
         setStartingState htmlBtnRetry = do
           Button.setDisabled htmlBtnRetry False
-          Element.setInnerText htmlBtnRetry (Just "Попробовать снова")
+          Element.setInnerText htmlBtnRetry (Just $ dataBtnRetryActive connErrDialogData)
 
         handleNoConn doc action mvarActionResult noConnBox = do
           Element.setClassName noConnBox (unSel selShown)

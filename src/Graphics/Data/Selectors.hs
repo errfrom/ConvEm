@@ -8,7 +8,7 @@ module Graphics.Data.Selectors
   , selBtnLink, selTxtAdvice, selBoxFieldPair, selBoxFieldFirst
   , selBoxFieldSecond, selShowError, selBtnQuit, selBoxNavigation
   , selSwitchFst, selSwitchSnd, selBtnRetry, selBtnOfflineMode, selNoConnBox, selShown
-  , selHidden ) where
+  , selHidden, selConnErrMsg ) where
 
 import Data.Text (Text)
 
@@ -47,6 +47,8 @@ selBoxInputs                         = CSSSel "inputs"
 selNoConnBox                         = CSSSel "no-conn-box"
 selShown                             = CSSSel "shown"
 selHidden                            = CSSSel "hidden"
+
+selConnErrMsg                        = CSSSel "conn-err-msg"
 
 -- Class -----------------------------------------------------------------------
 

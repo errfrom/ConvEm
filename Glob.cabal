@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Init
   other-modules:       Graphics.Data.Forms
+                     , Graphics.Data.Dialogs
                      , Graphics.Data.Selectors
                      , Graphics.Form
                      , Graphics.General

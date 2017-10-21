@@ -1,13 +1,13 @@
-name:                Glob
+name:                ConvEm
 version:             0.1.0.0
-synopsis:            Haskell based chat-app.
-description:         Multiplatform, fast, secure and intuitive chat-app.
-homepage:            https://github.com/errfrom/Glob#readme
+synopsis:            Multifunctional chat-manager.
+description:
+homepage:            https://github.com/errfrom/ConvEm#readme
 license:             GPL-3.0
 license-file:        LICENSE
 author:              Ivanov Dmitry
 maintainer:          errfrom@yandex.ru
-copyright:           2017 Glob
+copyright:           2017 ConvEm
 category:            App
 build-type:          Simple
 extra-source-files:  README.md
@@ -56,24 +56,24 @@ library
                      , transformers
   default-language:    Haskell2010
 
-executable Glob-exe
+executable ConvEm-exe
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -Wall -dynamic -O2 -threaded -rtsopts -with-rtsopts=-N
                        -fno-warn-name-shadowing
   build-depends:       base
-                     , Glob
+                     , ConvEm
   default-language:    Haskell2010
 
-test-suite Glob-test
+test-suite ConvEm-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       base
-                     , Glob
+                     , ConvEm
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
 source-repository head
   type:     git
-  location: https://github.com/errfrom/Glob
+  location: https://github.com/errfrom/ConvEm

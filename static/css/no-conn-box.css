@@ -12,10 +12,10 @@
   visibility  : hidden;
 
   font-family : 'Roboto', sans-serif;
-  font-size   : 18px;
-  font-weight : 300;
+  font-size   : 16px;
+  font-weight : 400;
   text-align  : center;
-  color       : rgba(0, 0, 0, 0.50);
+  color       : rgba(0, 0, 0, 0.40);
 }
 
 #no-conn-box div
@@ -27,24 +27,24 @@
 #no-conn-box.hidden
 {
   visibility        : visible;
-  -webkit-animation : slideOutDown 1s forwards;
+  -webkit-animation : slideOutDown 0.5s forwards;
 }
 
 #no-conn-box.hidden div
 {
   visibility        : visible;
-  -webkit-animation : slideOutDown 0.5s forwards;
+  -webkit-animation : slideOutDown 0.25s forwards;
 }
 
 #no-conn-box.shown
 {
   visibility : visible;
-  -webkit-animation : slideInUp 0.5s;
+  -webkit-animation : slideInUp 0.25s;
 }
 
 #no-conn-box.shown div
 {
-  -webkit-animation : slideInUp 1s;
+  -webkit-animation : slideInUp 0.5s;
 }
 
 #btn-retry
@@ -53,15 +53,21 @@
   background         : none;
   border             : none;
   padding            : 0px 5px;
-  color              : rgba(0, 0, 0, 0.70);
+  color              : rgba(0, 0, 0, 0.60);
   font-family        : 'Roboto', sans-serif;
-  font-weight        : 300;
-  font-size          : 18px;
+  font-weight        : 400;
+  font-size          : 16px;
 }
 
 #btn-retry:hover
 {
-  color : rgba(0, 0, 0, 1);
+  color : rgba(0, 0, 0, 0.80);
+}
+
+#btn-retry:disabled
+{
+  color   : rgba(0, 0, 0, 0.40);
+  cursor  : default;
 }
 
 @-webkit-keyframes slideInUp

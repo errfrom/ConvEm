@@ -4,19 +4,44 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Types.General
-  (LoginStage(..)
-  ,LoginPrimaryData(..), defaultPut) where
+  ( LoginStage(..)
+  , LoginPrimaryData(..), defaultPut
+  , AppM, App(..), modifyAppM, getAppM, askApp ) where
 
 --------------------------------------------------------------------------------
 -- Объявления, часто использующиеся в других модулях.
 --------------------------------------------------------------------------------
 
-import GHC.Generics                 (Generic)
-import Data.Foldable                (toList)
-import Data.Default                 (Default, def)
-import Data.Data                    (Data)
-import Data.Binary                  (Binary(..), Put, Get)
+import GHC.Generics                        (Generic)
+import Control.Concurrent                  (MVar)
+import Control.Monad.Trans.Reader          (ReaderT, ask)
+import Control.Monad.IO.Class              (liftIO)
+import Data.Foldable                       (toList)
+import Data.Default                        (Default, def)
+import Data.Data                           (Data)
+import Data.Binary                         (Binary(..), Put, Get)
+import Data.IORef                          (IORef, modifyIORef, readIORef)
+import Network.Socket                      (Socket)
+import Graphics.UI.Gtk                     (Window)
+import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
 import qualified Data.Binary as Bin (putList, get)
+
+modifyAppM :: (DocumentClass d) => (App d -> App d) -> AppM d ()
+modifyAppM f = ask >>= \appRef -> liftIO $ modifyIORef appRef f
+
+getAppM :: (DocumentClass d) => (App d -> a) -> AppM d a
+getAppM f = ask >>= \appRef -> liftIO $ readIORef appRef >>= return . f
+
+askApp :: (DocumentClass d) => AppM d (App d)
+askApp = ask >>= liftIO . readIORef
+
+type AppM doc a = ReaderT (IORef (App doc)) IO a
+
+data App doc = App
+  { appDoc        :: doc
+  , appWin        :: Window
+  , appSock       :: Socket
+  , appAuthorized :: MVar Bool }
 
 -- Stages Description ----------------------------------------------------------
 

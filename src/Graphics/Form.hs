@@ -8,7 +8,8 @@ module Graphics.Form
   ( SwitchBtnToken(..), DescToken(..), FieldToken(..)
   , UIFormBuilder(..), buildForm
   , notifyError, hideError
-  , setSwitch, basicFormSetup ) where
+  , basicFormSetup
+  , UIHeight ) where
 
 import Control.Monad.IO.Class              (liftIO)
 import Control.Monad.Trans.Reader          (ReaderT(..), ask)
@@ -17,9 +18,8 @@ import Data.Text                           (Text)
 import Text.HTML.Parser                    (Token(..), Attr(..))
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
 import Graphics.UI.Gtk.WebKit.DOM.Element
-import Graphics.General                    (Id, onClick, onFocus, operateElemById)
+import Graphics.General                    (Id, onFocus, operateElemById)
 import Graphics.Data.Selectors
-import Types.General
 import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLElement      as Element
 import qualified Text.HTML.Parser                            as HtmlParser
 import qualified Data.Maybe                                  as M  (catMaybes)
@@ -199,15 +199,6 @@ hideError :: (DocumentClass doc) => UIHeight -> ReaderT doc IO ()
 hideError formHeight = do
   operateElemById selBoxError $ \boxError -> setClassName boxError ("" :: String)
   setFormHeight formHeight
-
-setSwitch :: (DocumentClass doc) => LoginStage -> Maybe LoginStage -> ReaderT doc IO ()
-setSwitch fstStage mSndStage = do
-  worker fstStage selSwitchFst
-  case mSndStage of
-    Nothing       -> return ()
-    Just sndStage -> worker sndStage selSwitchSnd
-  where worker stage sel           = operateElemById sel (bindSwitch stage)
-        bindSwitch stage btnSwitch = onClick btnSwitch (print stage) -- FIXME
 
 basicFormSetup :: (DocumentClass doc) => UIHeight -> ReaderT doc IO ()
 basicFormSetup uiHeight =

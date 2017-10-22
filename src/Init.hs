@@ -4,6 +4,8 @@
 module Init
   ( initInterface ) where
 
+import Control.Monad.Trans.Reader          (ReaderT(..))
+import Data.IORef                          (newIORef)
 import Control.Monad                       (void)
 import Control.Concurrent                  (forkIO)
 import Control.Concurrent.MVar             (takeMVar, newEmptyMVar)
@@ -11,9 +13,10 @@ import System.Glib.Attributes              (AttrOp((:=)))
 import Graphics.UI.Gtk                     (on, Window)
 import Graphics.UI.Gtk.WebKit.WebView      (WebView)
 import Graphics.UI.Gtk.WebKit.DOM.Document (Document)
-import Login.SignIn                        (logInSetup)
+import Login.Logic                         (logInSetup)
 import Inline.StyleSheet
 import Server.General
+import Types.General                       (App(..))
 import Graphics.General
 import Graphics.Data.Selectors
 import Graphics.UI.Gtk.WebKit.DOM.HTMLElement
@@ -59,11 +62,12 @@ initInterface =
       let doc = winDoc winParams
           win = winGtk winParams
       in do
+        appRef <- newIORef (App doc win sock mvarAuthorized)
         btnQuit <- Doc.getElementById doc selBtnQuit'
         maybe (selNonexistent selBtnQuit')
-              (\btn -> do setInnerText (castToHTMLElement btn) (Just "ВЫЙТИ")
+              (\btn -> do setInnerText (castToHTMLElement btn) (Just "Выйти")
                           bindQuit win sock btn) btnQuit
-        logInSetup doc win sock mvarAuthorized
+        runReaderT logInSetup appRef
     Gtk.mainGUI
     putStrLn "END."
     where bindQuit win sock btnQuit = onClick btnQuit $ do

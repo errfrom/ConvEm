@@ -5,26 +5,26 @@
 
 module Types.General
   ( LoginStage(..)
-  , LoginPrimaryData(..), defaultPut
+  , defaultPut
   , AppM, App(..), modifyAppM, getAppM, askApp ) where
 
 --------------------------------------------------------------------------------
 -- Объявления, часто использующиеся в других модулях.
 --------------------------------------------------------------------------------
 
-import GHC.Generics                        (Generic)
 import Control.Concurrent                  (MVar)
 import Control.Monad.Trans.Reader          (ReaderT, ask)
 import Control.Monad.IO.Class              (liftIO)
+import Data.Typeable                       (Typeable)
 import Data.Foldable                       (toList)
 import Data.Default                        (Default, def)
 import Data.Data                           (Data)
-import Data.Binary                         (Binary(..), Put, Get)
+import Data.Binary                         (Binary(..), Put)
 import Data.IORef                          (IORef, modifyIORef, readIORef)
 import Network.Socket                      (Socket)
 import Graphics.UI.Gtk                     (Window)
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
-import qualified Data.Binary as Bin (putList, get)
+import qualified Data.Binary as Bin        (putList)
 
 modifyAppM :: (DocumentClass d) => (App d -> App d) -> AppM d ()
 modifyAppM f = ask >>= \appRef -> liftIO $ modifyIORef appRef f
@@ -51,21 +51,12 @@ data LoginStage =
   | RecoveryStageEmail
   | RecoveryStageKey
   | RecoveryStageChangePassw
-  deriving (Data, Show)
+  deriving (Data, Typeable, Show)
 
 instance Default LoginStage where
   def = SignInStage
 
 -- Data related ----------------------------------------------------------------
-
-data LoginPrimaryData a =
-  LoginPrimaryData { email :: a
-                   , passw :: a }
-  deriving (Show, Foldable, Generic)
-
-instance (Binary a) => Binary (LoginPrimaryData a) where
-  put = defaultPut
-  get = (Bin.get :: Get [a]) >>= \(e:p:_) -> return (LoginPrimaryData e p)
 
 defaultPut :: (Binary a, Foldable t) => t a -> Put
 defaultPut = Bin.putList . toList

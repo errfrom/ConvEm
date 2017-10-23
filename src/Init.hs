@@ -13,7 +13,7 @@ import System.Glib.Attributes              (AttrOp((:=)))
 import Graphics.UI.Gtk                     (on, Window)
 import Graphics.UI.Gtk.WebKit.WebView      (WebView)
 import Graphics.UI.Gtk.WebKit.DOM.Document (Document)
-import Login.Logic                         (logInSetup)
+import Login.Logic                         (signInSetup)
 import Inline.StyleSheet
 import Server.General
 import Types.General                       (App(..))
@@ -67,7 +67,7 @@ initInterface =
         maybe (selNonexistent selBtnQuit')
               (\btn -> do setInnerText (castToHTMLElement btn) (Just "Выйти")
                           bindQuit win sock btn) btnQuit
-        runReaderT logInSetup appRef
+        runReaderT signInSetup appRef
     Gtk.mainGUI
     putStrLn "END."
     where bindQuit win sock btnQuit = onClick btnQuit $ do

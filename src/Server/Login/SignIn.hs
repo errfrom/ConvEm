@@ -7,8 +7,7 @@ import Network.Socket            (Socket)
 import Network.Socket.ByteString (recv, send)
 import Data.ByteString           (ByteString)
 import Database.MySQL.Simple     (Only(..))
-import Login.SignIn              (SignInData(..), SignInResult(..))
-import Types.General             (LoginPrimaryData(..))
+import Login.SignIn              (SignInDataBS, SignInData(..), SignInResult(..))
 import Types.ServerAction        (constrAsFlag)
 import qualified Data.Binary           as Bin   (decode)
 import qualified Data.ByteString.Lazy  as LBS   (fromStrict)
@@ -19,11 +18,11 @@ handleAuthorization :: Socket -> IO ByteString
 handleAuthorization conn = do
   _      <- send conn "1"
   bsData <- LBS.fromStrict <$> recv conn 200
-  let data_ = primaryData (Bin.decode bsData :: SignInData ByteString)
-  mPasswHash <- getHashedPassword (email data_)
+  let data_ = Bin.decode bsData :: SignInDataBS
+  mPasswHash <- getHashedPassword (signInEmail data_)
   let res = case mPasswHash of
               Nothing -> SignInInvalidData
-              Just ph -> if (Crypt.validatePassword ph $ passw data_)
+              Just ph -> if (Crypt.validatePassword ph $ signInPassw data_)
                            then SignInCorrectData else SignInInvalidData
   return (constrAsFlag res)
 

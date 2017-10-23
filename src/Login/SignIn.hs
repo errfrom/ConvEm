@@ -4,18 +4,21 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DeriveFoldable        #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE RecordWildCards       #-}
 
 module Login.SignIn
-  ( SignInData(..), SignInResult(..) ) where
+  ( SignInData(..), SignInResult(..)
+  , SignInDataBS ) where
 
 import GHC.Generics                           (Generic)
 import Data.ByteString.Char8                  (ByteString, unpack)
 import Data.Data                              (Data)
+import Data.Typeable                          (Typeable)
 import Data.Binary                            (Binary(..), Get)
 import Data.Default                           (Default, def)
 import Data.Proxy                             (Proxy(..))
 import Crypto.BCrypt                          (HashingPolicy(..))
-import Types.General                          (LoginStage(..), LoginPrimaryData(..), defaultPut)
+import Types.General                          (LoginStage(..), defaultPut)
 import Login.General                          (checkEmail, checkPassw)
 import Types.ServerAction hiding              (serverRequest)
 import qualified Data.Binary        as Bin    (get)
@@ -27,20 +30,19 @@ import qualified Crypto.BCrypt      as BCrypt (hashPasswordUsingPolicy
 
 type OpenPassword   = ByteString
 type HashedPassword = ByteString
+type SignInDataBS   = SignInData ByteString
 
 data SignInData a =
-  SignInData { primaryData :: LoginPrimaryData a }
-  deriving (Show, Foldable, Generic)
+  SignInData { signInEmail :: a
+             , signInPassw :: a }
+  deriving (Show, Typeable, Foldable, Generic)
 
 instance (Binary a) => Binary (SignInData a) where
   put = defaultPut
-  get = do
-    dataPrimary <- Bin.get :: Get (LoginPrimaryData a)
-    return (SignInData dataPrimary)
+  get = (Bin.get :: Get [a]) >>= \(e:p:_) -> return (SignInData e p)
 
 instance ServerActionData (SignInData ByteString) where
-  validateData SignInData{ primaryData = prim } =
-    checkEmail (email prim) && checkPassw (unpack $ passw prim)
+  validateData SignInData{..} = checkEmail signInEmail && checkPassw (unpack signInPassw)
 
 -- Auth Result Desc ------------------------------------------------------------
 
@@ -61,7 +63,7 @@ hashPassw passw = do
   where hashCost = 11
         hashingPolicy = HashingPolicy hashCost BCrypt.defaultHashAlgorithm
 
-instance ServerAction (SignInData ByteString) SignInResult where
+instance ServerAction SignInDataBS SignInResult where
   runServerAction sock aData
    |validateData aData = Action.serverRequest SignInStage sock aData (Proxy :: Proxy SignInResult)
    |otherwise = return SignInInvalidData

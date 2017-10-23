@@ -5,7 +5,7 @@ module Graphics.General
   ( Id, Class
   , selNonexistent, operateElemById
   , onClick, onFocus, onPress
-  , getValue
+  , getValue, getInputs
   , withNoConnHandling ) where
 
 import Data.Text                                    (Text, unpack)
@@ -18,7 +18,7 @@ import Graphics.UI.Gtk.WebKit.DOM.EventTarget       (EventTargetClass)
 import Graphics.UI.Gtk.WebKit.DOM.MouseEvent        (MouseEvent)
 import Graphics.UI.Gtk.WebKit.DOM.Element           (Element)
 import Graphics.UI.Gtk.WebKit.DOM.Document          (DocumentClass)
-import Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement  (castToHTMLInputElement)
+import Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement  (HTMLInputElement, castToHTMLInputElement)
 import Graphics.UI.Gtk.WebKit.DOM.HTMLElement       (castToHTMLElement)
 import Graphics.UI.Gtk.WebKit.DOM.HTMLButtonElement (castToHTMLButtonElement)
 import Graphics.UI.Gtk.Abstract.Widget              (WidgetClass)
@@ -27,9 +27,12 @@ import System.Glib.Signals                          (ConnectId)
 import Graphics.Data.Dialogs                        (ConnErrDialogData(..), connErrDialogData)
 import Graphics.Data.Selectors
 import Types.ServerAction
+import qualified Data.Maybe                                     as M       (catMaybes)
 import qualified Inline.StyleSheet                              as Inline  (readHtml, appendHtml)
 import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement    as Inp     (getValue)
-import qualified Graphics.UI.Gtk.WebKit.DOM.Document            as Doc     (getElementById)
+import qualified Graphics.UI.Gtk.WebKit.DOM.NodeList            as NL      (getLength, item)
+import qualified Graphics.UI.Gtk.WebKit.DOM.Document            as Doc     (getElementById
+                                                                           ,getElementsByTagName)
 import qualified Graphics.UI.Gtk.WebKit.DOM.Element             as Element (setClassName)
 import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLElement         as Element (setInnerText)
 import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLButtonElement   as Button  (setDisabled)
@@ -60,7 +63,9 @@ onFocus = onMouseEvent "focus"
 
 -- Устанавливает событие, происходящие при нажатии на конкретную клавишу.
 onPress :: (WidgetClass self) => self -> Text -> IO () -> IO (ConnectId self)
-onPress widget eventKeyName' action =
+onPress widget eventKeyName' action = --on widget keyReleaseEvent $ \
+
+
   let event (Key _ _ _ _ _ _ _ _ eventKeyName _)
        |eventKeyName == eventKeyName' = action >> return True
        |otherwise                     = return False
@@ -85,6 +90,14 @@ getValue doc selId =
     inp <- Doc.getElementById doc selId'
     maybe (selNonexistent selId' >> return Nothing)
           (Inp.getValue . castToHTMLInputElement) inp
+
+-- Возвращает все поля ввода, находящиеся в DOM.
+getInputs :: (DocumentClass doc) => doc -> IO [HTMLInputElement]
+getInputs doc = do
+  (Just inputsNodeList) <- Doc.getElementsByTagName doc ("input" :: String)
+  numInputs             <- NL.getLength inputsNodeList
+  sequence [ NL.item inputsNodeList i | i <- [0..numInputs]] >>=
+    return . map castToHTMLInputElement . M.catMaybes
 
 initNoConnBox :: (DocumentClass doc) => doc -> IO Element
 initNoConnBox doc = do

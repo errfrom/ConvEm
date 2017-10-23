@@ -18,15 +18,11 @@ import Data.Text                           (Text)
 import Text.HTML.Parser                    (Token(..), Attr(..))
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
 import Graphics.UI.Gtk.WebKit.DOM.Element
-import Graphics.General                    (Id, onFocus, operateElemById)
+import Graphics.General                    (Id, onFocus, operateElemById, getInputs)
 import Graphics.Data.Selectors
 import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLElement      as Element
 import qualified Text.HTML.Parser                            as HtmlParser
-import qualified Data.Maybe                                  as M  (catMaybes)
 import qualified Data.Text.Lazy                              as LT (toStrict)
-import qualified Graphics.UI.Gtk.WebKit.DOM.Document         as Doc
-import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement as Inp
-import qualified Graphics.UI.Gtk.WebKit.DOM.NodeList         as NL
 
 class HTMLTokenized t where
   tokenize :: t -> [Token]
@@ -201,16 +197,6 @@ hideError formHeight = do
   setFormHeight formHeight
 
 basicFormSetup :: (DocumentClass doc) => UIHeight -> ReaderT doc IO ()
-basicFormSetup uiHeight =
-  let tagInput = "input" :: String
-  in do
-    doc <- ask
-    liftIO $ do
-      (Just inputsNodeList) <- Doc.getElementsByTagName doc tagInput
-      bindHideError inputsNodeList doc uiHeight
-  where -- Каждому полю ввода устанавливается событие: при фокусе скрывать ошибку.
-        bindHideError inputsNodeList doc uiHeight = do
-          numInputs <- NL.getLength inputsNodeList
-          inputs    <- sequence [ NL.item inputsNodeList i | i <- [0..numInputs]] >>=
-                       return . map Inp.castToHTMLInputElement . M.catMaybes
-          mapM_ (flip onFocus $ runReaderT (hideError uiHeight) doc) inputs
+basicFormSetup uiHeight = ask >>= \doc -> liftIO $ do
+  inputs <- getInputs doc
+  mapM_ (flip onFocus $ runReaderT (hideError uiHeight) doc) inputs

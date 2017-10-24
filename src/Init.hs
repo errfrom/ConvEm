@@ -54,10 +54,10 @@ initInterface =
   let winTitle    = "Conv'Em" :: String
       selBtnQuit' = unSel selBtnQuit
   in do
-    _    <- Gtk.initGUI
-    _    <- forkIO initServer
-    sock <- initSocket ClientSocket
+    _              <- forkIO initServer
+    sock           <- initSocket ClientSocket
     mvarAuthorized <- newEmptyMVar
+    _              <- Gtk.initGUI
     initLogin winTitle $ \winParams ->
       let doc = winDoc winParams
           win = winGtk winParams
@@ -68,8 +68,11 @@ initInterface =
               (\btn -> do setInnerText (castToHTMLElement btn) (Just "Выйти")
                           bindQuit win sock btn) btnQuit
         runReaderT signInSetup appRef
+    forkIO $ do
+      _ <- takeMVar mvarAuthorized
+      putStrLn "Authorized"
+      -- Main window code will be here.
     Gtk.mainGUI
-    putStrLn "END."
     where bindQuit win sock btnQuit = onClick btnQuit $ do
             Gtk.widgetDestroy win
             Sock.close sock

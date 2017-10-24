@@ -7,7 +7,7 @@ import Network.Socket            (Socket)
 import Network.Socket.ByteString (recv, send)
 import Data.ByteString           (ByteString)
 import Database.MySQL.Simple     (Only(..))
-import Login.SignIn              (SignInDataBS, SignInData(..), SignInResult(..))
+import Login.Types               (SignInDatum(..), SignInResult(..))
 import Types.ServerAction        (constrAsFlag)
 import qualified Data.Binary           as Bin   (decode)
 import qualified Data.ByteString.Lazy  as LBS   (fromStrict)
@@ -18,12 +18,12 @@ handleAuthorization :: Socket -> IO ByteString
 handleAuthorization conn = do
   _      <- send conn "1"
   bsData <- LBS.fromStrict <$> recv conn 200
-  let data_ = Bin.decode bsData :: SignInDataBS
+  let data_ = Bin.decode bsData :: SignInDatum
   mPasswHash <- getHashedPassword (signInEmail data_)
   let res = case mPasswHash of
               Nothing -> SignInInvalidData
               Just ph -> if (Crypt.validatePassword ph $ signInPassw data_)
-                           then SignInCorrectData else SignInInvalidData
+                           then SignInAuthorized else SignInInvalidData
   return (constrAsFlag res)
 
 -- Получает хеш пароля по указанному значению

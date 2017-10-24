@@ -24,7 +24,7 @@ library
 
                      , Inline.StyleSheet
 
-                     , Login.SignIn
+                     , Login.Types
                      , Login.General
                      , Login.Logic
 

@@ -7,11 +7,10 @@ import Control.Monad                       (void)
 import Control.Monad.IO.Class              (liftIO)
 import Control.Monad.Trans.Reader          (ReaderT(..), ask)
 import Data.Dynamic                        (Dynamic, Typeable)
-import Data.Proxy
-import Data.ByteString.Char8               (ByteString, pack)
+import Data.Proxy                          (Proxy(..))
+import Data.ByteString.Char8               (pack)
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
-import Login.SignIn
-import Login.Recovery
+import Login.Types
 import Graphics.Data.Selectors
 import Graphics.Data.Forms
 import Graphics.Form
@@ -78,16 +77,24 @@ initForm formBuilder fstStage mSndStage = do
 
 setUpStage :: (DocumentClass doc) => LoginStage -> AppM doc ()
 setUpStage stage = case stage of SignInStage        -> signInSetup
-                                 RecoveryStageEmail -> undefined
+                                 RecoveryStageEmail -> recEmailSetup
 
-signInSetup:: (DocumentClass doc) => AppM doc ()
+signInSetup, recEmailSetup :: (DocumentClass doc) => AppM doc ()
 
 signInSetup = do
   app <- askApp
   let doc = appDoc app
   uiHeight <- initForm formSignIn RecoveryStageEmail (Just SignUpStage)
-  withRunServerAction (Dyn.toDyn (SignInData :: ByteString -> ByteString -> SignInDataBS))
-                      (Proxy :: Proxy SignInDataBS) $ \actionResult ->
+  withRunServerAction (Dyn.toDyn SignInDatum) (Proxy :: Proxy SignInDatum) $ \actionResult ->
     case actionResult of
-      SignInCorrectData -> MVar.putMVar (appAuthorized app) True
+      SignInAuthorized  -> MVar.putMVar (appAuthorized app) True
       SignInInvalidData -> Gtk.postGUIAsync $ runReaderT (notifyError uiHeight errInvalidData) doc
+
+recEmailSetup = do
+  appRef   <- ask
+  doc      <- getAppM appDoc
+  uiHeight <- initForm formEmailRecovery SignInStage (Just SignUpStage)
+  withRunServerAction (Dyn.toDyn EmailRecDatum) (Proxy :: Proxy RecoveryDatum) $ \actionResult ->
+    Gtk.postGUIAsync $ case actionResult of
+                         RecKeySent      -> flip runReaderT appRef (setUpStage RecoveryStageKey)
+                         RecInvalidEmail -> runReaderT (notifyError uiHeight errInvalidEmail) doc

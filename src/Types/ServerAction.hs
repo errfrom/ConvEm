@@ -1,7 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE ConstraintKinds        #-}
 
 module Types.ServerAction
   (ServerActionData(..), ServerActionResult, ServerAction(..)
@@ -14,8 +13,10 @@ module Types.ServerAction
 -- инксапсулирующую определенное обращение клиента к серверу.
 --------------------------------------------------------------------------------
 
+import Control.Exception (throwIO)
+import GHC.IO.Exception
+
 import Control.Monad                           (void)
-import Data.Default                            (Default, def)
 import Data.Data                               (Data, ConIndex)
 import Data.Proxy                              (Proxy(..))
 import Data.Binary                             (Binary)
@@ -31,11 +32,12 @@ import qualified Data.Data             as Data (dataTypeOf, toConstr, fromConstr
 
 -- Эта функция переводит все необходимое в бинарные данные и в нужном
 -- порядке отсылает серверу.
-serverRequest :: forall proxy r. forall a d. (Binary a, ServerAction (d a) r)
-              => LoginStage -> Socket -> d a -> proxy r -> IO r
+serverRequest :: forall proxy res. forall data'. (ServerAction data' res)
+              => LoginStage -> Socket -> data' -> proxy res -> IO res
 serverRequest stage sock actionData _ = do
   _ <- send sock (constrAsFlag stage)
   waitServer
+  -- _ <- throwIO (IOError Nothing IllegalOperation "" "" Nothing Nothing) NOTE: To produce neterr.
   _ <- send sock . toStrict . Bin.encode $ actionData
   flagResult <- recv sock 1
   return $ flagAsConstr flagResult (Proxy :: Proxy r)
@@ -47,7 +49,7 @@ class (Binary d) => ServerActionData d where
   validateData :: d -> Bool
   validateData _ = True
 
-class (FlagConstrAssociative r) => ServerActionResult r where
+class (Data r) => ServerActionResult r where
 
 class ( ServerActionData   d
       , ServerActionResult r ) => ServerAction d r | d -> r where
@@ -55,15 +57,14 @@ class ( ServerActionData   d
 
 -- Функции, ассоциирующие конструкторы типа с флагом. --------------------------
 
-type Flag                    = ByteString
-type FlagConstrAssociative t = (Data t, Default t)
+type Flag = ByteString
 
 constrAsFlag :: (Data t) => t -> Flag
 constrAsFlag = BS8.pack . show . Data.constrIndex . Data.toConstr
 
-flagAsConstr :: forall proxy t. (FlagConstrAssociative t) => Flag -> proxy t -> t
+flagAsConstr :: forall proxy t. (Data t) => Flag -> proxy t -> t
 flagAsConstr flag _ =
-  let dt    = Data.dataTypeOf (def :: t)
+  let dt    = Data.dataTypeOf (undefined :: t)
       flag' = read (BS8.unpack flag) :: ConIndex
   -- NOTE: indexConstr является небезопасной из-за функции '!!'.
   --       Было принято решение не обработывать возможное исключение с целью

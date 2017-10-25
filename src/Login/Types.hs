@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Login.Types where
 
@@ -11,24 +11,22 @@ import Data.Typeable         (Typeable)
 import Data.Data             (Data)
 import Data.Binary           (Binary)
 import Data.ByteString.Char8 (ByteString, unpack)
-import Data.Proxy            (Proxy(..))
 import Login.General         (checkEmail, checkPassw)
 import Types.General         (LoginStage(..))
-import Types.ServerAction    (ServerAction(..), ServerActionData(..), ServerActionResult
-                             ,serverRequest)
+import Types.ServerAction    (ServerAction(..), ServerActionData(..), serverRequest)
 
 -- ServerActionData --------------------------------------------------------------------------------
 
 data SignInDatum = SignInDatum
   { signInEmail :: ByteString
   , signInPassw :: ByteString }
-  deriving (Typeable, Generic)
+  deriving (Data, Typeable, Generic)
 
 data RecoveryDatum =
     EmailRecDatum    ByteString
   | KeyRecDatum      ByteString
   | NewPasswRecDatum ByteString
-  deriving (Typeable, Generic)
+  deriving (Data, Typeable, Generic)
 
 instance Binary SignInDatum   where
 instance Binary RecoveryDatum where
@@ -42,32 +40,26 @@ instance ServerActionData RecoveryDatum where
   validateData (KeyRecDatum          _) = undefined
   validateData (NewPasswRecDatum passw) = checkPassw (unpack passw)
 
--- ServerActionResult ------------------------------------------------------------------------------
+-- ServerAction ------------------------------------------------------------------------------
 
-data SignInResult =
-    SignInAuthorized
-  | SignInInvalidData
-  deriving (Data)
+instance ServerAction SignInDatum where
+  data ServerActionResult SignInDatum = SignInAuthorized | SignInInvalidData
+    deriving (Data)
 
-data RecoveryResult =
-    RecKeySent          -- Ключ отправлен на Email
-  | RecInvalidEmail     -- Введен либо недопустимый, либо незарегистрированный Email.
-  | RecInvalidKey       -- Ключ, введенный пользователем не совпадает с действительным.
-  | RecValidKey
-  | RecInvalidPassw     -- Недопустимый пароль.
-                        -- NOTE: Пользователю необходимо вывести соотв. подсказку.
-  | RecMismatchedPassws -- Значение поля 'Пароль' не совпадает со значение поля 'Повторите пароль'.
-  | RecPasswChanged     -- Успешное завершение процедуры восстановления доступа.
-  deriving (Data)
-
-instance ServerActionResult SignInResult   where
-instance ServerActionResult RecoveryResult where
-
--- ServerAction ------------------------------------------------------------------------------------
-
-instance ServerAction SignInDatum SignInResult where
   runServerAction sock aData
-   |validateData aData = serverRequest SignInStage sock aData (Proxy :: Proxy SignInResult)
+   |validateData aData = serverRequest SignInStage sock aData
    |otherwise = return SignInInvalidData
 
-instance ServerAction RecoveryDatum RecoveryResult where
+instance ServerAction RecoveryDatum where
+  data ServerActionResult RecoveryDatum =
+      RecKeySent          -- Ключ отправлен на Email
+    | RecInvalidEmail     -- Введен либо недопустимый, либо незарегистрированный Email.
+    | RecInvalidKey       -- Ключ, введенный пользователем не совпадает с действительным.
+    | RecValidKey
+    | RecInvalidPassw     -- Недопустимый пароль.
+                          -- NOTE: Пользователю необходимо вывести соотв. подсказку.
+    | RecMismatchedPassws -- Значение поля 'Пароль' не совпадает со значение поля 'Повторите пароль'.
+    | RecPasswChanged     -- Успешное завершение процедуры восстановления доступа.
+    deriving (Data)
+
+  runServerAction = undefined

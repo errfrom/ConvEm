@@ -27,9 +27,9 @@ import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLInputElement as Inp  (getValue)
 -- Обобщенно формирует необходимые данные и выполняет запрос к серверу.
 -- На основе введеных пользователем значениях формируются данные,
 -- а после динамически создается соответствующий блок данных.
-withRunServerAction :: forall proxy data'. forall doc res.
-                     ( DocumentClass doc, Typeable data', ServerAction data' res)
-                    => Dynamic -> proxy data' -> (res -> IO ()) -> AppM doc ()
+withRunServerAction :: forall proxy d. forall doc.
+                     ( DocumentClass doc, Typeable d, ServerAction d)
+                    => Dynamic -> proxy d -> (ServerActionResult d -> IO ()) -> AppM doc ()
 withRunServerAction constrDynamic _ behavior = do
   app <- askApp
   let doc = appDoc app
@@ -37,7 +37,7 @@ withRunServerAction constrDynamic _ behavior = do
     inpVals <- getInputs doc >>= mapM Inp.getValue >>= return . M.catMaybes
     let inpValsDynamic    = map (Dyn.toDyn . pack) inpVals
         dataDynamic       = apply constrDynamic inpValsDynamic
-        (Just actionData) = Dyn.fromDynamic dataDynamic :: Maybe data'
+        (Just actionData) = Dyn.fromDynamic dataDynamic :: Maybe d
     Conc.forkIO $ do
       actionResult <- withNoConnHandling doc $ runServerAction (appSock app) actionData
       behavior actionResult

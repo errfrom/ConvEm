@@ -1,9 +1,9 @@
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Types.ServerAction
-  (ServerActionData(..), ServerActionResult, ServerAction(..)
+  (ServerActionData(..), ServerAction(..)
   ,serverRequest
   ,constrAsFlag, flagAsConstr) where
 
@@ -16,47 +16,41 @@ module Types.ServerAction
 import Control.Exception (throwIO)
 import GHC.IO.Exception
 
-import Control.Monad                           (void)
 import Data.Data                               (Data, ConIndex)
 import Data.Proxy                              (Proxy(..))
 import Data.Binary                             (Binary)
 import Data.ByteString.Char8                   (ByteString)
 import Data.ByteString.Lazy.Char8              (toStrict)
-import Data.Word8                              (_nul, _backslash)
 import Data.Monoid                             ((<>))
 import Network.Socket                          (Socket)
 import Network.Socket.ByteString               (recv, send)
 import Types.General                           (LoginStage)
 import qualified Data.Binary           as Bin  (encode)
-import qualified Data.ByteString       as BS   (singleton)
 import qualified Data.ByteString.Char8 as BS8  (pack, unpack)
 import qualified Data.Data             as Data (dataTypeOf, toConstr, fromConstr
                                                ,constrIndex, indexConstr)
 
 -- Эта функция переводит все необходимое в бинарные данные и в нужном
 -- порядке отсылает серверу.
-serverRequest :: forall proxy res. forall data'. (ServerAction data' res)
-              => LoginStage -> Socket -> data' -> proxy res -> IO res
-serverRequest stage sock actionData _ =
+serverRequest :: (ServerAction a) => LoginStage -> Socket -> a -> IO (ServerActionResult a)
+serverRequest stage sock actionData =
   let actionDataEncoded = (toStrict . Bin.encode) actionData
       dataToSend        = constrAsFlag stage <> actionDataEncoded
   in do
     _ <- send sock dataToSend
     -- _ <- throwIO (IOError Nothing IllegalOperation "" "" Nothing Nothing) NOTE: To produce neterr.
     flagResult <- recv sock 1
-    return $ flagAsConstr flagResult (Proxy :: Proxy r)
+    return $ flagAsConstr flagResult (Proxy :: Proxy (ServerActionResult a))
 
 -- Action Interface ------------------------------------------------------------
 
-class (Binary d) => ServerActionData d where
+class (Data d, Binary d) => ServerActionData d where
   validateData :: d -> Bool
   validateData _ = True
 
-class (Data r) => ServerActionResult r where
-
-class ( ServerActionData   d
-      , ServerActionResult r ) => ServerAction d r | d -> r where
-  runServerAction :: Socket -> d -> IO r
+class (ServerActionData d, Data (ServerActionResult d)) => ServerAction d where
+  data ServerActionResult d :: *
+  runServerAction :: Socket -> d -> IO (ServerActionResult d)
 
 -- Функции, ассоциирующие конструкторы типа с флагом. --------------------------
 

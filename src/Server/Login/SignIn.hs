@@ -7,7 +7,7 @@ import Network.Socket            (Socket)
 import Network.Socket.ByteString (recv, send)
 import Data.ByteString           (ByteString)
 import Database.MySQL.Simple     (Only(..))
-import Login.Types               (SignInDatum(..), SignInResult(..))
+import Login.Types
 import Types.ServerAction        (constrAsFlag)
 import qualified Data.Binary           as Bin   (decode)
 import qualified Data.ByteString.Lazy  as LBS   (ByteString, fromStrict)

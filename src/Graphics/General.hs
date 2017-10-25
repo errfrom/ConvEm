@@ -111,7 +111,8 @@ initNoConnBox doc = do
 -- Выполняет действие, зависимое от состояния соединения с сетью.
 -- В случае отсутствия соединения показывает соответствующее окно,
 -- которое закроется только в случае успешного повторного выполнения действия.
-withNoConnHandling :: (DocumentClass doc, ServerActionResult r) => doc -> IO r -> IO r
+withNoConnHandling :: (DocumentClass doc, ServerAction d) => doc -> IO (ServerActionResult d)
+                                                                 -> IO (ServerActionResult d)
 withNoConnHandling doc action = tryRunAction action $ do
   mvarActionResult <- newEmptyMVar
   Gtk.postGUIAsync $ do

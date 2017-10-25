@@ -11,15 +11,18 @@ module Server.General
 -- писать меньше шаблонного кода.
 --------------------------------------------------------------------------------
 
-import Data.Proxy                           (Proxy(..))
-import Network.Socket                       (Socket)
-import Network.Socket.ByteString            (recv, send)
-import Control.Monad                        (forever)
-import Types.General                        (LoginStage(..))
-import Types.ServerAction                   (flagAsConstr)
-import Server.Login.SignIn                  (handleAuthorization)
-import qualified Network.Socket     as Sock
-import qualified Control.Concurrent as Conc (forkIO)
+import Data.Proxy                             (Proxy(..))
+import Data.Word8                             (_nul, _backslash)
+import Network.Socket                         (Socket)
+import Network.Socket.ByteString              (recv, send)
+import Control.Monad                          (forever)
+import Types.General                          (LoginStage(..))
+import Types.ServerAction                     (flagAsConstr)
+import Server.Login.SignIn                    (handleAuthorization)
+import qualified Data.ByteString      as BS   (split, singleton, head, tail)
+import qualified Data.ByteString.Lazy as LBS  (fromStrict)
+import qualified Network.Socket       as Sock
+import qualified Control.Concurrent   as Conc (forkIO)
 
 data SocketType = ClientSocket | ServerSocket
 
@@ -61,7 +64,9 @@ initServer = do
 -- При выполнении, установленное соединение закрывается.
 handleConn :: Socket -> Socket -> IO ()
 handleConn _ conn = do
-  flagStage <- recv conn 1
+  dataBlock <- recv conn 201
+  let flagStage = BS.singleton . BS.head $ dataBlock
+      bsData    = BS.tail dataBlock
   case (flagAsConstr flagStage (Proxy :: Proxy LoginStage)) of
-    SignInStage -> handleAuthorization conn >>= answerClient
+    SignInStage -> handleAuthorization bsData >>= answerClient
   where answerClient res = send conn res >> return ()

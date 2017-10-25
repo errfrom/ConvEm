@@ -10,21 +10,20 @@ import Database.MySQL.Simple     (Only(..))
 import Login.Types               (SignInDatum(..), SignInResult(..))
 import Types.ServerAction        (constrAsFlag)
 import qualified Data.Binary           as Bin   (decode)
-import qualified Data.ByteString.Lazy  as LBS   (fromStrict)
+import qualified Data.ByteString.Lazy  as LBS   (ByteString, fromStrict)
 import qualified Crypto.BCrypt         as Crypt (validatePassword)
 import qualified Database.MySQL.Simple as MySql
 
-handleAuthorization :: Socket -> IO ByteString
-handleAuthorization conn = do
-  _      <- send conn "1"
-  bsData <- LBS.fromStrict <$> recv conn 200
-  let data_ = Bin.decode bsData :: SignInDatum
-  mPasswHash <- getHashedPassword (signInEmail data_)
-  let res = case mPasswHash of
-              Nothing -> SignInInvalidData
-              Just ph -> if (Crypt.validatePassword ph $ signInPassw data_)
+handleAuthorization :: ByteString -> IO ByteString
+handleAuthorization bsData =
+  let data_ = (Bin.decode . LBS.fromStrict) bsData
+  in do
+    mPasswHash <- getHashedPassword (signInEmail data_)
+    let res = case mPasswHash of
+                Nothing -> SignInInvalidData
+                Just ph -> if (Crypt.validatePassword ph $ signInPassw data_)
                            then SignInAuthorized else SignInInvalidData
-  return (constrAsFlag res)
+    return (constrAsFlag res)
 
 -- Получает хеш пароля по указанному значению
 -- поля email. Если пользователь отсутствует в базе,

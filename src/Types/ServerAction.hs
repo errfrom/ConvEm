@@ -22,10 +22,13 @@ import Data.Proxy                              (Proxy(..))
 import Data.Binary                             (Binary)
 import Data.ByteString.Char8                   (ByteString)
 import Data.ByteString.Lazy.Char8              (toStrict)
+import Data.Word8                              (_nul, _backslash)
+import Data.Monoid                             ((<>))
 import Network.Socket                          (Socket)
 import Network.Socket.ByteString               (recv, send)
 import Types.General                           (LoginStage)
 import qualified Data.Binary           as Bin  (encode)
+import qualified Data.ByteString       as BS   (singleton)
 import qualified Data.ByteString.Char8 as BS8  (pack, unpack)
 import qualified Data.Data             as Data (dataTypeOf, toConstr, fromConstr
                                                ,constrIndex, indexConstr)
@@ -34,14 +37,14 @@ import qualified Data.Data             as Data (dataTypeOf, toConstr, fromConstr
 -- порядке отсылает серверу.
 serverRequest :: forall proxy res. forall data'. (ServerAction data' res)
               => LoginStage -> Socket -> data' -> proxy res -> IO res
-serverRequest stage sock actionData _ = do
-  _ <- send sock (constrAsFlag stage)
-  waitServer
-  -- _ <- throwIO (IOError Nothing IllegalOperation "" "" Nothing Nothing) NOTE: To produce neterr.
-  _ <- send sock . toStrict . Bin.encode $ actionData
-  flagResult <- recv sock 1
-  return $ flagAsConstr flagResult (Proxy :: Proxy r)
-  where waitServer = void (recv sock 1)
+serverRequest stage sock actionData _ =
+  let actionDataEncoded = (toStrict . Bin.encode) actionData
+      dataToSend        = constrAsFlag stage <> actionDataEncoded
+  in do
+    _ <- send sock dataToSend
+    -- _ <- throwIO (IOError Nothing IllegalOperation "" "" Nothing Nothing) NOTE: To produce neterr.
+    flagResult <- recv sock 1
+    return $ flagAsConstr flagResult (Proxy :: Proxy r)
 
 -- Action Interface ------------------------------------------------------------
 

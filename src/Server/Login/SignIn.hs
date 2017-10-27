@@ -1,24 +1,26 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts  #-}
 
 module Server.Login.SignIn
   ( handleAuthorization ) where
 
-import Network.Socket            (Socket)
-import Network.Socket.ByteString (recv, send)
 import Data.ByteString           (ByteString)
-import Database.MySQL.Simple     (Only(..))
+import Data.Text                 (Text)
 import Login.Types
 import Types.ServerAction        (constrAsFlag)
+import Types.DBEntities
+import Database.Esqueleto
 import qualified Data.Binary           as Bin   (decode)
-import qualified Data.ByteString.Lazy  as LBS   (ByteString, fromStrict)
+import qualified Data.ByteString.Char8 as BS    (unpack)
+import qualified Data.Text             as T     (pack)
+import qualified Data.ByteString.Lazy  as LBS   (fromStrict)
 import qualified Crypto.BCrypt         as Crypt (validatePassword)
-import qualified Database.MySQL.Simple as MySql
 
 handleAuthorization :: ByteString -> IO ByteString
 handleAuthorization bsData =
   let data_ = (Bin.decode . LBS.fromStrict) bsData
   in do
-    mPasswHash <- getHashedPassword (signInEmail data_)
+    mPasswHash <- (getHashedPassword . T.pack . BS.unpack . signInEmail) data_
     let res = case mPasswHash of
                 Nothing -> SignInInvalidData
                 Just ph -> if (Crypt.validatePassword ph $ signInPassw data_)
@@ -28,13 +30,13 @@ handleAuthorization bsData =
 -- Получает хеш пароля по указанному значению
 -- поля email. Если пользователь отсутствует в базе,
 -- возвращает Nothing.
-getHashedPassword :: ByteString -> IO (Maybe ByteString)
-getHashedPassword email =
-  let query = "SELECT USERS_PASSWORD FROM USERS WHERE USER_EMAIL = ?"
-  in do
-    conn <- MySql.connect MySql.defaultConnectInfo {MySql.connectDatabase = "users"
-                                                   ,MySql.connectPassword = "adimro8010"}
-    sqlResult <- MySql.query conn query (Only email) :: IO [Only ByteString]
-    return $ case sqlResult of
-               [] -> Nothing
-               [hashedPassword] -> Just $ fromOnly hashedPassword
+getHashedPassword :: Text -> IO (Maybe ByteString)
+getHashedPassword email = do
+  userEntity <- worker email
+  return $ case userEntity of []                  -> Nothing
+                              ((Entity _ user):_) -> Just (uPassw user)
+  where worker email = withDBConn . runSqlConn $ do
+          select $
+            from $ \user -> do
+            where_ (user ^. UEmail ==. val email)
+            distinct (return user)

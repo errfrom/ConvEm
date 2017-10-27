@@ -33,6 +33,8 @@ library
 
                      , Types.General
                      , Types.ServerAction
+                     , Types.DBEntities
+
   build-depends:       base >= 4.7 && < 5
                      , bytestring
                      , directory
@@ -55,6 +57,13 @@ library
                      , text
                      , filepath
                      , transformers
+                     , esqueleto
+                     , persistent
+                     , persistent-template
+                     , persistent-mysql
+                     , monad-control
+                     , monad-logger
+                     , resourcet
   default-language:    Haskell2010
 
 executable ConvEm-exe

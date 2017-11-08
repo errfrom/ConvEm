@@ -64,6 +64,7 @@ library
                      , monad-control
                      , monad-logger
                      , resourcet
+                     , containers
   default-language:    Haskell2010
 
 executable ConvEm-exe

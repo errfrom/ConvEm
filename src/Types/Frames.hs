@@ -13,13 +13,15 @@ module Types.Frames
 --        * Функции удаления структуры.
 --        * Удобная обработка списков элементов.
 --        * Небольшой DSL для удобного описания DOM-иерархий.
----------------------------------------------------------------------------------------------------- 
+----------------------------------------------------------------------------------------------------
 
+import Data.Typeable                       (Typeable)
 import System.Glib.UTFString               (GlibString)
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
 import Graphics.UI.Gtk.WebKit.DOM.Element  (Element)
 
-class (Traversable frame) => FrameClass frame where
-  initFrame :: (DocumentClass doc, GlibString builder) => doc -> frame builder -> IO (frame Element)
+class (Typeable frame, Traversable frame) => FrameClass frame where
+  initFrame    :: (DocumentClass doc, GlibString builder) => doc -> frame builder -> IO (frame Element)
 
-data AnyFrame = forall frame. FrameClass frame => AnyFrame (frame Element)
+data AnyFrame = forall frame. FrameClass frame => AnyFrame
+  { unAnyFrame :: frame Element }

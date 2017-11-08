@@ -6,7 +6,8 @@
 module Types.General
   ( LoginStage(..)
   , defaultPut
-  , AppM, App(..), modifyAppM, getAppM, askApp ) where
+  , AppM, App(..), modifyAppM, getAppM, askApp
+  , module Frames ) where
 
 --------------------------------------------------------------------------------
 -- Объявления, часто использующиеся в других модулях.
@@ -21,9 +22,11 @@ import Data.Default                        (Default, def)
 import Data.Data                           (Data)
 import Data.Binary                         (Binary(..), Put)
 import Data.IORef                          (IORef, modifyIORef, readIORef)
+import Data.Set                            (Set)
 import Network.Socket                      (Socket)
 import Graphics.UI.Gtk                     (Window)
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
+import Types.Frames          as Frames
 import qualified Data.Binary as Bin        (putList)
 
 modifyAppM :: (DocumentClass d) => (App d -> App d) -> AppM d ()
@@ -41,7 +44,8 @@ data App doc = App
   { appDoc        :: doc
   , appWin        :: Window
   , appSock       :: Socket
-  , appAuthorized :: MVar Bool }
+  , appAuthorized :: MVar Bool
+  , appFrames     :: Set AnyFrame }
 
 -- Stages Description ----------------------------------------------------------
 

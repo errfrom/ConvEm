@@ -8,7 +8,7 @@ module Types.General
   ( LoginStage(..)
   , defaultPut
   , AppM, App(..), modifyAppM, getAppM, askApp
-  , module Frames, askForElement ) where
+  , module Frames, askForElement, withFrame ) where
 
 --------------------------------------------------------------------------------
 -- Объявления, часто использующиеся в других модулях.
@@ -25,13 +25,16 @@ import Data.Dynamic                        (toDyn, dynApp, fromDynamic)
 import Data.Binary                         (Binary(..), Put)
 import Data.IORef                          (IORef, modifyIORef, readIORef)
 import Data.Set                            (Set)
+import Data.Text                           (Text)
 import Network.Socket                      (Socket)
 import Graphics.UI.Gtk                     (Window)
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
 import Graphics.UI.Gtk.WebKit.DOM.Element  (Element)
-import Types.Frames          as Frames
-import qualified Data.Binary as Bin        (putList)
-import qualified Data.Set    as S          (toList)
+import System.Glib.UTFString               (GlibString)
+import Types.Frames
+import qualified Types.Frames    as Frames hiding (AnyFrame(..))
+import qualified Data.Binary     as Bin    (putList)
+import qualified Data.Set        as S      (toList, insert, delete)
 
 modifyAppM :: (DocumentClass d) => (App d -> App d) -> AppM d ()
 modifyAppM f = ask >>= \appRef -> liftIO $ modifyIORef appRef f
@@ -59,6 +62,17 @@ askForElement f = getAppM appFrames >>= \frameWrappers ->
          | eqTypeRep trFrame (typeOf frame) = Just frameWrapper
          | otherwise                        = getMatchedFrame trFrame xs
         eqTypeRep a b = typeRepFingerprint a == typeRepFingerprint b
+
+withFrame :: (DocumentClass doc, FrameClass frame) => frame Text
+                                                   -> (frame Element -> AppM doc a)
+                                                   -> AppM doc a
+withFrame builder behavior = do
+  doc <- getAppM appDoc
+  (releaser, frame) <- liftIO (initFrame doc builder)
+  let frameWrapper = AnyFrame frame
+  modifyAppM $ \app -> let oldFrames = appFrames app
+                       in app { appFrames = S.insert frameWrapper oldFrames }
+  behavior frame
 
 type AppM doc a = ReaderT (IORef (App doc)) IO a
 

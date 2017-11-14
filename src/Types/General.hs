@@ -30,7 +30,6 @@ import Network.Socket                      (Socket)
 import Graphics.UI.Gtk                     (Window)
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
 import Graphics.UI.Gtk.WebKit.DOM.Element  (Element)
-import System.Glib.UTFString               (GlibString)
 import Types.Frames
 import qualified Types.Frames    as Frames hiding (AnyFrame(..))
 import qualified Data.Binary     as Bin    (putList)
@@ -52,11 +51,11 @@ askForElement :: forall frame d. (DocumentClass d, FrameClass frame)
 askForElement f = getAppM appFrames >>= \frameWrappers ->
   let trFrame       = typeRep (Proxy :: Proxy (frame Element))
   in return $ case (getMatchedFrame trFrame $ S.toList frameWrappers) of
-                Nothing               -> Nothing
                 -- Компилятор не позволяет применить функцию к полученной структуре, так
                 -- как не имеет возможности проверить совпадение типов. Поэтому применяем ее
                 -- динамически (runtime-ошибки быть не может).
                 Just (AnyFrame frame) -> fromDynamic (toDyn f `dynApp` toDyn frame) :: Maybe Element
+                Nothing               -> Nothing
   where getMatchedFrame _ [] = Nothing
         getMatchedFrame trFrame (frameWrapper@(AnyFrame frame):xs)
          | eqTypeRep trFrame (typeOf frame) = Just frameWrapper

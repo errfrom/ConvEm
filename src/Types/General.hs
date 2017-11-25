@@ -1,18 +1,12 @@
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveFoldable      #-}
-{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
+{-# LANGUAGE FlexibleContexts    #-}
 
 module Types.General
-  ( LoginStage(..)
-  , defaultPut
-  , AppM, App(..), modifyAppM, getAppM, askApp
-  , module Frames, askForElement, withFrame ) where
-
---------------------------------------------------------------------------------
--- Объявления, часто использующиеся в других модулях.
---------------------------------------------------------------------------------
+  ( AppM, App(..), modifyAppM, getAppM, askApp
+  , module Frames, askForElement, withFrame, releaseFrame
+  , translateInterface ) where
 
 import Control.Concurrent                  (MVar)
 import Control.Monad.Trans.Reader          (ReaderT, ask)
@@ -25,15 +19,14 @@ import Data.Dynamic                        (toDyn, dynApp, fromDynamic)
 import Data.Binary                         (Binary(..), Put)
 import Data.IORef                          (IORef, modifyIORef, readIORef)
 import Data.Set                            (Set)
-import Data.Text                           (Text)
 import Network.Socket                      (Socket)
 import Graphics.UI.Gtk                     (Window)
+import Graphics.UI.Gtk.WebKit.WebView      (WebView)
 import Graphics.UI.Gtk.WebKit.DOM.Document (DocumentClass)
 import Graphics.UI.Gtk.WebKit.DOM.Element  (Element)
-import Types.Frames
-import qualified Types.Frames    as Frames hiding (AnyFrame(..))
+import Types.Frames              as Frames
 import qualified Data.Binary     as Bin    (putList)
-import qualified Data.Set        as S      (toList, insert, delete)
+import qualified Data.Set        as S      (toList, fromList, insert, delete, notMember)
 
 modifyAppM :: (DocumentClass d) => (App d -> App d) -> AppM d ()
 modifyAppM f = ask >>= \appRef -> liftIO $ modifyIORef appRef f
@@ -44,58 +37,71 @@ getAppM f = ask >>= \appRef -> liftIO $ readIORef appRef >>= return . f
 askApp :: (DocumentClass d) => AppM d (App d)
 askApp = ask >>= liftIO . readIORef
 
--- NOTE: Safe.
--- Ищет элемент среди установленных структур.
-askForElement :: forall frame d. (DocumentClass d, FrameClass frame)
-              => (frame Element -> Element) -> AppM d (Maybe Element)
+-- Managing frames inside the AppM monad -----------------------------------------------------------
+
+-- NOTE: safe.
+-- Looks for a specific element among existing frames.
+askForElement :: forall frameData d. (DocumentClass d, FrameClass frameData)
+              => (FrameElements' frameData -> Element)
+              -> AppM d (Maybe Element)
 askForElement f = getAppM appFrames >>= \frameWrappers ->
-  let trFrame       = typeRep (Proxy :: Proxy (frame Element))
-  in return $ case (getMatchedFrame trFrame $ S.toList frameWrappers) of
-                -- Компилятор не позволяет применить функцию к полученной структуре, так
-                -- как не имеет возможности проверить совпадение типов. Поэтому применяем ее
-                -- динамически (runtime-ошибки быть не может).
-                Just (AnyFrame frame) -> fromDynamic (toDyn f `dynApp` toDyn frame) :: Maybe Element
-                Nothing               -> Nothing
+  let trFrame       = typeRep (Proxy :: Proxy (FrameElements' frameData))
+  in return $
+    case (getMatchedFrame trFrame $ S.toList frameWrappers) of
+      -- This function won't be applied because there is not enough info about types.
+      -- So we apply it dynamically. (Runtime errors are impossible)
+      Just (AnyFrame frameElements _) -> fromDynamic (toDyn f `dynApp` toDyn frameElements) :: Maybe Element
+      Nothing                            -> Nothing
   where getMatchedFrame _ [] = Nothing
-        getMatchedFrame trFrame (frameWrapper@(AnyFrame frame):xs)
-         | eqTypeRep trFrame (typeOf frame) = Just frameWrapper
-         | otherwise                        = getMatchedFrame trFrame xs
+        getMatchedFrame trFrame (frameWrapper@(AnyFrame frameElements _):xs)
+         | eqTypeRep trFrame (typeOf frameElements) = Just frameWrapper
+         | otherwise                                = getMatchedFrame trFrame xs
         eqTypeRep a b = typeRepFingerprint a == typeRepFingerprint b
 
-withFrame :: (DocumentClass doc, FrameClass frame) => frame Text
-                                                   -> (frame Element -> AppM doc a)
-                                                   -> AppM doc a
-withFrame builder behavior = do
+updateFrames :: (DocumentClass doc) => (Set AnyFrame -> Set AnyFrame) -> AppM doc ()
+updateFrames f = modifyAppM $ \app -> let oldFrames = appFrames app
+                                      in app { appFrames = f oldFrames }
+
+withFrame :: (DocumentClass doc, FrameClass frameData)
+          => frameData
+          -> ((FrameElements' frameData, ReleaseFunction, AnyFrame) -> AppM doc a)
+          -> AppM doc a
+withFrame builder' behavior = do
+  lang <- getAppM appLanguage
+  let builder = translate lang builder'
   doc <- getAppM appDoc
   (releaser, frame) <- liftIO (initFrame doc builder)
-  let frameWrapper = AnyFrame frame
-  modifyAppM $ \app -> let oldFrames = appFrames app
-                       in app { appFrames = S.insert frameWrapper oldFrames }
-  behavior frame
+  let frameWrapper = AnyFrame frame builder
+  updateFrames (S.insert frameWrapper)
+  behavior (frame, releaser, frameWrapper)
+
+releaseFrame :: (DocumentClass doc) => ReleaseFunction -> AnyFrame -> AppM doc ()
+releaseFrame releaser frameWrapper = getAppM appFrames >>= worker
+  where worker frames
+         | S.notMember frameWrapper frames = return ()
+         | otherwise                       = do updateFrames (S.delete frameWrapper)
+                                                liftIO (runReleaser releaser)
+
+translateInterface :: (DocumentClass doc) => Language -> AppM doc ()
+translateInterface lang = do doc <- getAppM appDoc
+                             frames <- getAppM appFrames
+                             framesLocalized <- liftIO $ mapM (translateOne doc) (S.toList frames)
+                             modifyAppM $ \app -> app { appLanguage = lang
+                                                      , appFrames = S.fromList framesLocalized }
+  where translateOne :: (DocumentClass doc) => doc -> AnyFrame -> IO AnyFrame
+        translateOne doc (AnyFrame frameElements frameData) =
+          let newFrameData = translate lang frameData
+          in updateFrame doc frameElements newFrameData >> return (AnyFrame frameElements newFrameData)
+
+-- App ---------------------------------------------------------------------------------------------
 
 type AppM doc a = ReaderT (IORef (App doc)) IO a
 
 data App doc = App
   { appDoc        :: doc
   , appWin        :: Window
+  , appWV         :: WebView
   , appSock       :: Socket
   , appAuthorized :: MVar Bool
+  , appLanguage   :: Language
   , appFrames     :: Set AnyFrame }
-
--- Stages Description ----------------------------------------------------------
-
-data LoginStage =
-    SignInStage
-  | SignUpStage
-  | RecoveryStageEmail
-  | RecoveryStageKey
-  | RecoveryStageChangePassw
-  deriving (Data, Typeable, Show)
-
-instance Default LoginStage where
-  def = SignInStage
-
--- Data related ----------------------------------------------------------------
-
-defaultPut :: (Binary a, Foldable t) => t a -> Put
-defaultPut = Bin.putList . toList

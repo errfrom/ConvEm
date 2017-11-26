@@ -1,12 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
-module Graphics.General
-  ( Id, Class
-  , selNonexistent, operateElemById
-  , onClick, onFocus, onPress
-  , getValue, getInputs
-  , withNoConnHandling ) where
+module Graphics.General where
 
 import Data.Text                                    (Text, unpack)
 import Control.Concurrent.MVar                      (newEmptyMVar, putMVar, takeMVar)
@@ -24,8 +19,6 @@ import Graphics.UI.Gtk.WebKit.DOM.HTMLButtonElement (castToHTMLButtonElement)
 import Graphics.UI.Gtk.Abstract.Widget              (WidgetClass)
 import Graphics.UI.Gtk.Gdk.Events                   (Event(Key))
 import System.Glib.Signals                          (ConnectId)
-import Graphics.Data.Dialogs                        (ConnErrDialogData(..), connErrDialogData)
-import Graphics.Data.Selectors
 import Types.ServerAction
 import qualified Data.Maybe                                     as M       (catMaybes)
 import qualified Inline.StyleSheet                              as Inline  (readHtml, appendHtml)
@@ -41,15 +34,6 @@ import qualified Graphics.UI.Gtk.WebKit.DOM.EventTargetClosures as Event   (even
 import qualified Graphics.UI.Gtk                                as Gtk     (onKeyRelease
                                                                            ,timeoutAdd
                                                                            ,postGUIAsync)
-
-type Id    = Text
-type Class = Text
-
-setInnerText :: Element -> Text -> IO ()
-setInnerText el text = Element.setInnerText (castToHTMLElement el) (Just text)
-
-selNonexistent :: Text -> IO ()
-selNonexistent sel = putStrLn $ "Not valid selector - " ++ (unpack sel) ++ "."
 
 onMouseEvent :: (EventTargetClass self) => String -> self -> IO () -> IO ()
 onMouseEvent eventName target action = do
@@ -72,24 +56,14 @@ onPress widget eventKeyName' action = --on widget keyReleaseEvent $ \
       event _                         = return False
   in Gtk.onKeyRelease widget event
 
--- Обобщенное продолжение, свойственное любой функции,
--- каким-либо образом оперирующей с одним элементом.
--- TODO: Повесить логгер.
-operateElemById :: (DocumentClass doc) => CSSSel -> (Element -> IO ()) -> ReaderT doc IO ()
-operateElemById selId behavior = do
-  doc <- ask
-  liftIO $ do
-    let selId' = unSel selId
-    el <- Doc.getElementById doc selId'
-    maybe (selNonexistent selId') behavior el
-
+{-
 getValue :: (DocumentClass doc) => doc -> CSSSel -> IO (Maybe String)
 getValue doc selId =
   let selId' = unSel selId
   in do
     inp <- Doc.getElementById doc selId'
     maybe (selNonexistent selId' >> return Nothing)
-          (Inp.getValue . castToHTMLInputElement) inp
+          (Inp.getValue . castToHTMLInputElement) inp -}
 
 -- Возвращает все поля ввода, находящиеся в DOM.
 getInputs :: (DocumentClass doc) => doc -> IO [HTMLInputElement]
@@ -99,13 +73,13 @@ getInputs doc = do
   sequence [ NL.item inputsNodeList i | i <- [0..numInputs]] >>=
     return . map castToHTMLInputElement . M.catMaybes
 
+{-
 initNoConnBox :: (DocumentClass doc) => doc -> IO Element
 initNoConnBox doc = do
   Inline.appendHtml doc "no-conn-box.html" $(Inline.readHtml "no-conn-box.html")
   (Just noConnBox) <- Doc.getElementById doc (unSel selNoConnBox)
-  flip runReaderT doc $ do
-    operateElemById selConnErrMsg $ flip setInnerText (dataConnErrMessage connErrDialogData)
-    operateElemById selBtnRetry   $ flip setInnerText (dataBtnRetryActive connErrDialogData)
+  operateElemById doc selConnErrMsg $ flip setInnerText (dataConnErrMessage connErrDialogData)
+  operateElemById doc selBtnRetry   $ flip setInnerText (dataBtnRetryActive connErrDialogData)
   return noConnBox
 
 -- Выполняет действие, зависимое от состояния соединения с сетью.
@@ -137,10 +111,10 @@ withNoConnHandling doc action = tryRunAction action $ do
 
         handleNoConn doc action mvarActionResult noConnBox = do
           Element.setClassName noConnBox (unSel selShown)
-          flip runReaderT doc $ operateElemById selBtnRetry $ \btnRetry -> onClick btnRetry $
+          operateElemById doc selBtnRetry $ \btnRetry -> onClick btnRetry $
             let htmlBtnRetry = castToHTMLButtonElement btnRetry
             in void $ do setExecutingState htmlBtnRetry
                          flip tryRunAction (return()) $ do
                            action >>= putMVar mvarActionResult
                            Element.setClassName noConnBox (unSel selHidden)
-                         flip Gtk.timeoutAdd 3000 (setStartingState htmlBtnRetry >> return False)
+                         flip Gtk.timeoutAdd 3000 (setStartingState htmlBtnRetry >> return False) -}

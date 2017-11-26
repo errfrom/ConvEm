@@ -14,14 +14,13 @@ import Data.Typeable                          (Typeable, typeOf, typeRepFingerpr
 import Data.Default                           (Default(..))
 import System.Glib.UTFString                  (GlibString)
 import Data.Text                              (Text)
-import Data.Tree                              (Tree(..))
+import Data.Tree                              (Tree(..), Forest)
 import Text.HTML.Parser                       (Token(..), Attr(..))
 import Graphics.UI.Gtk.WebKit.DOM.Document    (DocumentClass)
 import Graphics.UI.Gtk.WebKit.DOM.Element     (Element)
 import Graphics.UI.Gtk.WebKit.DOM.HTMLElement (castToHTMLElement)
 import Graphics.UI.Gtk.WebKit.DOM.Node        (NodeClass)
 import qualified Data.Maybe                             as M       (fromJust, catMaybes)
-import qualified Data.Tree                              as Tree    (flatten)
 import qualified Text.HTML.Tree                         as Tree    (tokensToForest)
 import qualified Graphics.UI.Gtk.WebKit.DOM.Element     as Element (setAttribute)
 import qualified Graphics.UI.Gtk.WebKit.DOM.HTMLElement as Element (setInnerText)
@@ -32,7 +31,7 @@ default (Text)
 
 -- Localization ------------------------------------------------------------------------------------
 
-data Language = RUS | ENG 
+data Language = RUS | ENG
 
 instance Default Language where def = ENG
 
@@ -82,23 +81,21 @@ appendChildren parent = mapM_ (\x -> Node.appendChild parent (Just x))
 
 -- DOM -> WebKit -----------------------------------------------------------------------------------
 
-type Elements     = [Element]
-type RootElements = Elements
+type RootElements = [Element]
 
 -- Isomorphism. (Saves the structure and information)
 -- Transforms the list of HTML-tokens to WebKit elements.
 -- Also returns the list of root elements,
 -- which play the role of connectors with the current DOM.
 -- NOTE: Throws error on invalid DOM.
-tokensToNodes :: (DocumentClass doc) => doc -> [Token] -> IO (RootElements, Elements)
+tokensToNodes :: (DocumentClass doc) => doc -> [Token] -> IO (RootElements, Forest Element)
 tokensToNodes doc tokens =
   let (Right tokensForest) = Tree.tokensToForest tokens
   in transformForest doc tokensForest
   where transformForest doc tokensForest = do
           elemsForest <- M.catMaybes <$> mapM (worker doc Nothing) tokensForest
           let roots = map rootLabel elemsForest
-              nodes = (concat . map Tree.flatten) elemsForest
-          return (roots, nodes)
+          return (roots, elemsForest)
           where worker _ (Just parent) (Node (ContentText text) []) = do
                   Element.setInnerText (castToHTMLElement parent) (Just text)
                   return Nothing

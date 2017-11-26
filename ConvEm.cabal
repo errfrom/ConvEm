@@ -16,11 +16,9 @@ cabal-version:       >= 1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Init
-  other-modules:       Graphics.Data.Forms
-                     , Graphics.Data.Dialogs
-                     , Graphics.Data.Selectors
-                     , Graphics.Form
-                     , Graphics.General
+  other-modules:       Graphics.General
+                     , Graphics.Frames
+                     , Graphics.Data.Frames
 
                      , Inline.StyleSheet
 
@@ -32,6 +30,7 @@ library
                      , Server.General
 
                      , Types.General
+                     , Types.Frames
                      , Types.ServerAction
                      , Types.DBEntities
 
@@ -65,6 +64,9 @@ library
                      , monad-logger
                      , resourcet
                      , containers
+                     , matrix
+                     , split
+                     , twilio
   default-language:    Haskell2010
 
 executable ConvEm-exe

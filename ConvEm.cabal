@@ -17,7 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Init
   other-modules:       Graphics.General
-                     , Graphics.Frames
+                     , Graphics.Frames.Entry
                      , Graphics.Data.Frames
 
                      , Inline.StyleSheet

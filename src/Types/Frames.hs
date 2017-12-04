@@ -2,12 +2,13 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ExtendedDefaultRules      #-}
 {-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE PatternSynonyms           #-}
 
 module Types.Frames
   ( Language(..), LocalizedClass(..)
   , AnyFrame(AnyFrame), ReleaseFunction(..), defaultFunRelease
   , FrameClass(..), FrameElements'
-  , appendChildren, tokensToNodes ) where
+  , pattern (:>), appendChildren, tokensToNodes ) where
 
 import GHC.Fingerprint.Type                   (Fingerprint)
 import Data.Typeable                          (Typeable, typeOf, typeRepFingerprint)
@@ -80,6 +81,8 @@ appendChildren :: (NodeClass parent, NodeClass child) => parent -> [child] -> IO
 appendChildren parent = mapM_ (\x -> Node.appendChild parent (Just x))
 
 -- DOM -> WebKit -----------------------------------------------------------------------------------
+
+pattern (:>) a b = Node a b
 
 type RootElements = [Element]
 
